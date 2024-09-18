@@ -90,6 +90,8 @@ This would select both the `InlineCollectionFlags.IListT` and
 `InlineCollectionFlags.LengthProperty` features for your collection type
 `MyCollection`.
 
+### Interface features
+
 Interface features (those whose name begins with an `interface` name, such as
 `InlineCollectionFlags.IEnumerable`) will implement that interface for your
 collection type. Generic interface names have a `-T` suffix (such as
@@ -97,13 +99,19 @@ collection type. Generic interface names have a `-T` suffix (such as
 are applied, so `InlineCollectionFlags.IEnumerableT` *implies* and will always
 include `InlineCollectionFlags.IEnumerable`.
 
+### Method features
+
 Method features (those with a `-Method` suffix, such as
 `InlineCollectionFlags.ContainsMethod`) will produce `public` instance methods
 for your collection type.
 
+### Operator features
+
 Operator features (those with an `-Operator[s]` suffix, such as
 `InlineCollectionFlags.ArrayConversionOperators`) will produce `public static`
 operator methods for your collection type.
+
+### Property features
 
 Property features (those with a `-Property` suffix, such as
 `InlineCollectionFlags.LengthProperty`) will produce `public readonly`
@@ -111,15 +119,22 @@ properties for your collection type. Currently there are no property features
 that support modifying the collection, as indexer support is already built-in
 for inline arrays.
 
+### Other features
+
+The `InlineCollectionFlags.CollectionBuilder` feature will add support for
+collection expressions by generating a collection builder class for your type.
+Analyzers will check collection expressions for your type to help detect if
+the collection expression is too large for your type.
+
 The special feature `InlineCollectionFlags.Everything` will include all
 available features for your collection type.
 
 ### Selecting the right features
 
 Because inline collections are **value types**, special consideration must be
-given if opting-in to any of the interface features. Consuming your inline
-collection directly via these interfaces will result in a boxing conversion,
-which can potentially be expensive.
+given if opting-in to any of the [interface features](#Interface-features).
+Consuming your inline collection directly via these interfaces will result in a
+boxing conversion, which can potentially be expensive.
 
 Additionally, some interface members cannot be meaningfully represented by an
 inline collection, such as the
