@@ -1,5 +1,4 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
@@ -11,7 +10,7 @@ using static Monkeymoto.InlineCollections.Diagnostics;
 
 namespace Monkeymoto.InlineCollections
 {
-    internal readonly struct InlineCollectionTypeInfo : IEquatable<InlineCollectionTypeInfo>
+    internal readonly partial struct InlineCollectionTypeInfo : IEquatable<InlineCollectionTypeInfo>
     {
         public readonly string CollectionBuilderName = default!;
         public readonly string CollectionBuilderTypeParameterList = default!;
@@ -28,69 +27,6 @@ namespace Monkeymoto.InlineCollections
         public readonly string Namespace = default!;
         public readonly ImmutableArray<TypeListNode> TypeList = default!;
         public readonly INamedTypeSymbol TypeSymbol = default!;
-
-        private struct ConstructorArgs
-        {
-            public IFieldSymbol? FieldSymbol;
-            public InlineCollectionFlags Flags;
-            public int Length;
-            public Location Location;
-            public ImmutableArray<TypeListNode> TypeList;
-            public INamedTypeSymbol TypeSymbol;
-        }
-
-        public readonly struct TypeListNode
-        {
-            public readonly string DeclarationKind = default!;
-            public readonly string FullName = default!;
-            public readonly bool IsFileLocal = default;
-            public readonly bool IsPartial = default;
-            public readonly bool IsPublicOrInternal = default;
-            public readonly bool IsReadOnly = default;
-            public readonly Location Location = default!;
-            public readonly string Modifiers = default!;
-            public readonly string Name = default!;
-            public readonly INamedTypeSymbol TypeSymbol = default!;
-
-            public TypeListNode
-            (
-                INamedTypeSymbol typeSymbol,
-                CancellationToken cancellationToken,
-                TypeDeclarationSyntax? typeDeclaration = null
-            )
-            {
-                typeSymbol = typeSymbol.OriginalDefinition;
-                typeDeclaration ??= (TypeDeclarationSyntax)typeSymbol.DeclaringSyntaxReferences[0]
-                    .GetSyntax(cancellationToken);
-                var firstModifierKind = typeDeclaration.Modifiers.FirstOrDefault().Kind();
-                DeclarationKind = typeDeclaration switch
-                {
-                    ClassDeclarationSyntax => "class",
-                    InterfaceDeclarationSyntax => "interface",
-                    StructDeclarationSyntax => "struct",
-                    RecordDeclarationSyntax recordDeclaration =>
-                        recordDeclaration.Kind() switch
-                        {
-                            SyntaxKind.RecordStructDeclaration => "record struct",
-                            _ => "record class"
-                        },
-                    _ => throw new NotSupportedException($"Unsupported TypeDeclarationSyntax kind: {typeDeclaration.Kind()}")
-                };
-                FullName = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-                IsFileLocal = firstModifierKind == SyntaxKind.FileKeyword;
-                IsPartial = typeDeclaration.Modifiers.Any(static x => x.IsKind(SyntaxKind.PartialKeyword));
-                IsPublicOrInternal = firstModifierKind switch
-                {
-                    SyntaxKind.PublicKeyword or SyntaxKind.InternalKeyword => true,
-                    _ => false
-                };
-                IsReadOnly = typeDeclaration.Modifiers.Any(static x => x.IsKind(SyntaxKind.ReadOnlyKeyword));
-                Location = typeDeclaration.GetLocation();
-                Modifiers = typeDeclaration.Modifiers.ToString();
-                Name = typeSymbol.Name;
-                TypeSymbol = typeSymbol;
-            }
-        }
 
         public static bool operator ==(InlineCollectionTypeInfo left, InlineCollectionTypeInfo right) => left.Equals(right);
         public static bool operator !=(InlineCollectionTypeInfo left, InlineCollectionTypeInfo right) => !(left == right);
@@ -140,6 +76,56 @@ namespace Monkeymoto.InlineCollections
                 _ = sb.Append('>');
             }
             return sb.ToString();
+        }
+
+        private static ImmutableArray<Diagnostic> GetDiagnostics(in ConstructorArgs args, bool hasCollectionBuilder, in TypeListNode type)
+        {
+            var diagnostics = new List<Diagnostic>();
+            if (hasCollectionBuilder && args.TypeList.Any(static x => !x.IsPublicOrInternal))
+            {
+                diagnostics.AddDiagnostic(MMIC1000_CollectionBuilderTypeInaccessible_Descriptor, args.Location);
+            }
+            if (args.Length <= 0)
+            {
+                diagnostics.AddDiagnostic(MMIC1001_MustHaveValidLength_Descriptor, args.Location);
+            }
+            if (args.TypeList[0].IsFileLocal)
+            {
+                diagnostics.AddDiagnostic(MMIC1002_MustNotBeFileLocalType_Descriptor, args.TypeList[0].Location);
+            }
+            var nonPartialTypes = args.TypeList.Where(x => !x.IsPartial);
+            foreach (var nonPartialType in nonPartialTypes)
+            {
+                diagnostics.AddDiagnostic
+                (
+                    MMIC1003_MustBePartialType_Descriptor,
+                    nonPartialType.Location,
+                    nonPartialType.FullName
+                );
+            }
+            if (type.IsReadOnly)
+            {
+                diagnostics.AddDiagnostic(MMIC1004_MustNotBeReadOnly_Descriptor, args.Location);
+            }
+            if (args.FieldSymbol is null)
+            {
+                diagnostics.AddDiagnostic(MMIC1005_MustDefineExactlyOneField_Descriptor, args.Location);
+            }
+            else if
+            (
+                args.FieldSymbol.IsRequired ||
+                args.FieldSymbol.IsReadOnly ||
+                args.FieldSymbol.IsVolatile ||
+                args.FieldSymbol.IsFixedSizeBuffer
+            )
+            {
+                diagnostics.AddDiagnostic
+                (
+                    MMIC1006_InvalidElementFieldModifiers_Descriptor,
+                    args.FieldSymbol.Locations.FirstOrDefault()
+                );
+            }
+            return [.. diagnostics];
         }
 
         private static InlineCollectionFlags GetFlags(InlineCollectionFlags flags)
@@ -248,64 +234,17 @@ namespace Monkeymoto.InlineCollections
 
         private InlineCollectionTypeInfo(in ConstructorArgs args)
         {
-            var diagnostics = new List<Diagnostic>();
             var hasCollectionBuilder = args.Flags.HasFlag(InlineCollectionFlags.CollectionBuilder);
             var type = args.TypeList.Last();
-            if (hasCollectionBuilder && args.TypeList.Any(static x => !x.IsPublicOrInternal))
+            Diagnostics = GetDiagnostics(in args, hasCollectionBuilder, in type);
+            if (Diagnostics.Any())
             {
-                diagnostics.AddDiagnostic(MMIC1000_CollectionBuilderTypeInaccessible_Descriptor, args.Location);
-            }
-            if (args.Length <= 0)
-            {
-                diagnostics.AddDiagnostic(MMIC1001_MustHaveValidLength_Descriptor, args.Location);
-            }
-            if (args.TypeList[0].IsFileLocal)
-            {
-                diagnostics.AddDiagnostic(MMIC1002_MustNotBeFileLocalType_Descriptor, args.TypeList[0].Location);
-            }
-            var nonPartialTypes = args.TypeList.Where(x => !x.IsPartial);
-            foreach (var nonPartialType in nonPartialTypes)
-            {
-                diagnostics.AddDiagnostic
-                (
-                    MMIC1003_MustBePartialType_Descriptor,
-                    nonPartialType.Location,
-                    nonPartialType.FullName
-                );
-            }
-            if (type.IsReadOnly)
-            {
-                diagnostics.AddDiagnostic(MMIC1004_MustNotBeReadOnly_Descriptor, args.Location);
-            }
-            if (args.FieldSymbol is null)
-            {
-                diagnostics.AddDiagnostic(MMIC1005_MustDefineExactlyOneField_Descriptor, args.Location);
-            }
-            else if
-            (
-                args.FieldSymbol.IsRequired ||
-                args.FieldSymbol.IsReadOnly ||
-                args.FieldSymbol.IsVolatile ||
-                args.FieldSymbol.IsFixedSizeBuffer
-            )
-            {
-                diagnostics.AddDiagnostic
-                (
-                    MMIC1006_InvalidElementFieldModifiers_Descriptor,
-                    args.FieldSymbol.Locations.FirstOrDefault()
-                );
-            }
-            if (diagnostics.Any())
-            {
-                Diagnostics = [.. diagnostics];
                 return;
             }
-            int arity = args.TypeSymbol.Arity;
             CollectionBuilderName = hasCollectionBuilder ? GetCollectionBuilderName(in args.TypeList) : string.Empty;
             CollectionBuilderTypeParameterList = hasCollectionBuilder ?
                 GetCollectionBuilderTypeParameterList(in args.TypeList) :
                 string.Empty;
-            Diagnostics = [];
             ElementType = args.FieldSymbol!.Type.ToDisplayString();
             ElementZeroFieldName = args.FieldSymbol.Name;
             Flags = args.Flags;
