@@ -73,10 +73,10 @@ following requirements:
 
 ## `InlineCollectionFlags` features
 
-By default, all inline collections generate support for collection expressions.
-All other features are explicitly opt-in on a per-type basis via the
-`InlineCollectionFlags` passed to the `InlineCollectionAttribute` constructor.
-The `InlineCollectionFlags` can be combined using the bitwise `OR` operator:
+All inline collection features are explicitly opt-in on a per-type basis via
+the `InlineCollectionFlags` passed to the `InlineCollectionAttribute`
+constructor. The `InlineCollectionFlags` can be combined using the bitwise `OR`
+operator:
 
 ````C#
 [InlineCollection(InlineCollectionFlags.IListT | InlineCollectionFlags.LengthProperty, Length = 8)]
