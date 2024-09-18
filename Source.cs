@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using Microsoft.CodeAnalysis;
+using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -47,15 +49,13 @@ namespace Monkeymoto.InlineCollections
         public static string GenerateForType(in InlineCollectionTypeInfo typeInfo) => string.Format
         (
             Template_InlineCollection,
-            typeInfo.Namespace,                   // 0
-            typeInfo.Length,                      // 1
-            typeInfo.CollectionBuilderName,       // 2
-            typeInfo.AccessModifier,              // 3
-            typeInfo.FullName,                    // 4
-            GetInterfaceList(in typeInfo),        // 5
-            GetInlineCollectionBody(in typeInfo), // 6
-            typeInfo.TypeParameterList,           // 7
-            typeInfo.ElementType                  // 8
+            typeInfo.Namespace,                          // 0
+            GetTypeDeclarationsSource(in typeInfo),      // 1
+            typeInfo.CollectionBuilderName,              // 2
+            typeInfo.FullNameWithContainingTypeNames,    // 3
+            typeInfo.CollectionBuilderTypeParameterList, // 4
+            typeInfo.ElementType                         // 5
+
         );
 
         private static string GetArrayConversionOperatorsSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
@@ -393,6 +393,23 @@ namespace Monkeymoto.InlineCollections
         private static string GetSourceIf(bool condition, string template, params string[] formatArgs) =>
             condition ? string.Format(template, formatArgs) : string.Empty;
 
+        private static string GetStructDeclarationSource(in InlineCollectionTypeInfo typeInfo) => new StringBuilder
+        (
+            string.Format
+            (
+                Template_InlineCollection_StructDeclaration,
+                typeInfo.Length,                     // 0
+                typeInfo.CollectionBuilderName,      // 1
+                typeInfo.Modifiers,                  // 2
+                typeInfo.FullName,                   // 3
+                GetInterfaceList(in typeInfo),       // 4
+                GetInlineCollectionBody(in typeInfo) // 5
+            )
+        ).Replace("\r\n", "\n")
+            .Replace("\n\r", "\n")
+            .Replace("\n", $"{Template_NewLine}{new string(' ', 4 * (typeInfo.TypeList.Length - 1))}")
+            .ToString();
+
         private static string GetToArrayMethodSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_ToArrayMethod,
@@ -400,6 +417,42 @@ namespace Monkeymoto.InlineCollections
             typeInfo.Flags,
             typeInfo.ElementType // 0
         );
+
+        private static string GetTypeDeclarationsSource(in InlineCollectionTypeInfo typeInfo)
+        {
+            if (typeInfo.TypeList.Length == 1)
+            {
+                return GetStructDeclarationSource(in typeInfo);
+            }
+            var sb = new StringBuilder();
+            var indent = new StringBuilder("    ");
+            for (int i = 0; i < (typeInfo.TypeList.Length - 1); ++i)
+            {
+                var type = typeInfo.TypeList[i];
+                _ = sb
+                    .AppendLine()
+                    .Append(indent)
+                    .Append(type.Modifiers)
+                    .Append(' ')
+                    .Append(type.DeclarationKind)
+                    .Append(' ')
+                    .Append(type.TypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat))
+                    .AppendLine()
+                    .Append(indent)
+                    .Append('{');
+                _ = indent.Append("    ");
+            }
+            _ = sb.Append(GetStructDeclarationSource(in typeInfo));
+            for (int i = 0; i < (typeInfo.TypeList.Length - 1); ++i)
+            {
+                _ = sb.AppendLine();
+                indent.Length -= 4;
+                _ = sb
+                    .Append(indent)
+                    .Append("}");
+            }
+            return sb.ToString();
+        }
 
         private static string GetTryCopyToMethodSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (

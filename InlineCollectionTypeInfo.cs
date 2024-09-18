@@ -5,39 +5,130 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 using System.Threading;
 
 namespace Monkeymoto.InlineCollections
 {
     internal readonly struct InlineCollectionTypeInfo : IEquatable<InlineCollectionTypeInfo>
     {
-        public readonly string AccessModifier = default!;
         public readonly string CollectionBuilderName = default!;
+        public readonly string CollectionBuilderTypeParameterList = default!;
         public readonly ImmutableArray<Diagnostic> Diagnostics = default;
         public readonly string ElementType = default!;
         public readonly string ElementZeroFieldName = default!;
         public readonly InlineCollectionFlags Flags = default;
         public readonly string FullName = default!;
+        public readonly string FullNameWithContainingTypeNames = default!;
         public readonly int Length = default;
         public readonly string LengthPropertyOrValue = default!;
+        public readonly string Modifiers = default!;
         public readonly string Name = default!;
         public readonly string Namespace = default!;
-        public readonly string TypeParameterList = default!;
+        public readonly ImmutableArray<TypeListNode> TypeList = default!;
         public readonly INamedTypeSymbol TypeSymbol = default!;
 
         private struct ConstructorArgs
         {
             public IFieldSymbol? FieldSymbol;
             public InlineCollectionFlags Flags;
-            public bool IsPartial;
-            public bool IsPublic;
             public int Length;
             public Location Location;
+            public ImmutableArray<TypeListNode> TypeList;
             public INamedTypeSymbol TypeSymbol;
+        }
+
+        public readonly struct TypeListNode
+        {
+            public readonly string DeclarationKind = default!;
+            public readonly string FullName = default!;
+            public readonly bool IsPartial = default;
+            public readonly Location Location = default!;
+            public readonly string Modifiers = default!;
+            public readonly string Name = default!;
+            public readonly INamedTypeSymbol TypeSymbol = default!;
+
+            public TypeListNode
+            (
+                INamedTypeSymbol typeSymbol,
+                CancellationToken cancellationToken,
+                TypeDeclarationSyntax? typeDeclaration = null
+            )
+            {
+                typeSymbol = typeSymbol.OriginalDefinition;
+                typeDeclaration ??= (TypeDeclarationSyntax)typeSymbol.DeclaringSyntaxReferences[0]
+                    .GetSyntax(cancellationToken);
+                DeclarationKind = typeDeclaration switch
+                {
+                    ClassDeclarationSyntax => "class",
+                    InterfaceDeclarationSyntax => "interface",
+                    StructDeclarationSyntax => "struct",
+                    RecordDeclarationSyntax recordDeclaration =>
+                        recordDeclaration.Kind() switch
+                        {
+                            SyntaxKind.RecordStructDeclaration => "record struct",
+                            _ => "record class"
+                        },
+                    _ => throw new NotSupportedException($"Unsupported TypeDeclarationSyntax kind: {typeDeclaration.Kind()}")
+                };
+                FullName = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+                IsPartial = typeDeclaration.Modifiers.Any(static x => x.IsKind(SyntaxKind.PartialKeyword));
+                Location = typeDeclaration.GetLocation();
+                Modifiers = typeDeclaration.Modifiers.ToString();
+                Name = typeSymbol.Name;
+                TypeSymbol = typeSymbol;
+            }
         }
 
         public static bool operator ==(InlineCollectionTypeInfo left, InlineCollectionTypeInfo right) => left.Equals(right);
         public static bool operator !=(InlineCollectionTypeInfo left, InlineCollectionTypeInfo right) => !(left == right);
+
+        private static string GetCollectionBuilderName(in ImmutableArray<TypeListNode> typeList)
+        {
+            var sb = new StringBuilder();
+            foreach (var node in typeList)
+            {
+                if (sb.Length != 0)
+                {
+                    _ = sb.Append('_');
+                }
+                _ = sb.Append(node.Name);
+                if (node.TypeSymbol.Arity != 0)
+                {
+                    _ = sb.Append($"_{node.TypeSymbol.Arity}");
+                }
+            }
+            return sb.Append("_CollectionBuilder").ToString();
+        }
+
+        private static string GetCollectionBuilderTypeParameterList(in ImmutableArray<TypeListNode> typeList)
+        {
+            var sb = new StringBuilder();
+            foreach (var node in typeList)
+            {
+                if (node.TypeSymbol.Arity == 0)
+                {
+                    continue;
+                }
+                if (sb.Length == 0)
+                {
+                    _ = sb.Append('<');
+                }
+                foreach (var typeParameter in node.TypeSymbol.TypeParameters)
+                {
+                    if (sb[sb.Length - 1] != '<')
+                    {
+                        _ = sb.Append(", ");
+                    }
+                    _ = sb.Append(typeParameter.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
+                }
+            }
+            if (sb.Length != 0)
+            {
+                _ = sb.Append('>');
+            }
+            return sb.ToString();
+        }
 
         private static InlineCollectionFlags GetFlags(InlineCollectionFlags flags)
         {
@@ -76,13 +167,48 @@ namespace Monkeymoto.InlineCollections
             return flags;
         }
 
-        public static InlineCollectionTypeInfo GetTypeInfo(GeneratorAttributeSyntaxContext context, CancellationToken _)
+        private static string GetFullNameWithContainingTypeNames(in ImmutableArray<TypeListNode> typeList)
+        {
+            var sb = new StringBuilder();
+            foreach (var node in typeList)
+            {
+                if (sb.Length != 0)
+                {
+                    _ = sb.Append('.');
+                }
+                _ = sb.Append(node.FullName);
+            }
+            return sb.ToString();
+        }
+
+        private static ImmutableArray<TypeListNode> GetTypeList
+        (
+            INamedTypeSymbol targetTypeSymbol,
+            CancellationToken cancellationToken
+        )
+        {
+            var typeList = new LinkedList<TypeListNode>();
+            for
+            (
+                INamedTypeSymbol? typeSymbol = targetTypeSymbol;
+                typeSymbol is not null;
+                typeSymbol = typeSymbol.ContainingType
+            )
+            {
+                typeList.AddFirst(new TypeListNode(typeSymbol, cancellationToken));
+            }
+            return [.. typeList];
+        }
+
+        public static InlineCollectionTypeInfo GetTypeInfo
+        (
+            GeneratorAttributeSyntaxContext context,
+            CancellationToken cancellationToken
+        )
         {
             var typeDeclaration = (StructDeclarationSyntax)context.TargetNode;
             var args = new ConstructorArgs
             {
-                IsPartial = typeDeclaration.Modifiers.Any(static x => x.IsKind(SyntaxKind.PartialKeyword)),
-                IsPublic = typeDeclaration.Modifiers.Any(static x => x.IsKind(SyntaxKind.PublicKeyword)),
                 Location = typeDeclaration.GetLocation(),
                 TypeSymbol = (INamedTypeSymbol)context.TargetSymbol.OriginalDefinition
             };
@@ -101,23 +227,13 @@ namespace Monkeymoto.InlineCollections
             }
             args.Length = (int?)inlineCollectionAttributeData.NamedArguments.Where(static x => x.Key == "Length")
                 .SingleOrDefault().Value.Value ?? -1;
+            args.TypeList = GetTypeList(args.TypeSymbol, cancellationToken);
             return new(in args);
         }
 
         private InlineCollectionTypeInfo(in ConstructorArgs args)
         {
             var diagnostics = new List<Diagnostic>();
-            if (args.TypeSymbol.ContainingType is not null)
-            {
-                diagnostics.Add
-                (
-                    Diagnostic.Create
-                    (
-                        InlineCollections.Diagnostics.MMIC1000_MustBeTopLevelType_Descriptor,
-                        args.Location
-                    )
-                );
-            }
             if (args.Length <= 0)
             {
                 diagnostics.Add
@@ -129,14 +245,16 @@ namespace Monkeymoto.InlineCollections
                     )
                 );
             }
-            if (!args.IsPartial)
+            var nonPartialTypes = args.TypeList.Where(x => !x.IsPartial);
+            foreach (var nonPartialType in nonPartialTypes)
             {
                 diagnostics.Add
                 (
                     Diagnostic.Create
                     (
-                        InlineCollections.Diagnostics.MMIC1002_MustBePartialStruct_Descriptor,
-                        args.Location
+                        InlineCollections.Diagnostics.MMIC1002_MustBePartialType_Descriptor,
+                        nonPartialType.Location,
+                        nonPartialType.FullName
                     )
                 );
             }
@@ -157,18 +275,21 @@ namespace Monkeymoto.InlineCollections
                 return;
             }
             int arity = args.TypeSymbol.Arity;
-            AccessModifier = args.IsPublic ? "public" : "internal";
-            CollectionBuilderName = $"{args.TypeSymbol.Name}_{(arity != 0 ? $"{arity}_" : "")}CollectionBuilder";
+            var type = args.TypeList.Last();
+            CollectionBuilderName = GetCollectionBuilderName(in args.TypeList);
+            CollectionBuilderTypeParameterList = GetCollectionBuilderTypeParameterList(in args.TypeList);
             Diagnostics = [];
             ElementType = args.FieldSymbol!.Type.ToDisplayString();
             ElementZeroFieldName = args.FieldSymbol.Name;
             Flags = GetFlags(args.Flags);
-            FullName = args.TypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+            FullName = type.FullName;
+            FullNameWithContainingTypeNames = GetFullNameWithContainingTypeNames(in args.TypeList);
             Length = args.Length;
             LengthPropertyOrValue = Flags.HasFlag(InlineCollectionFlags.LengthProperty) ? "Length" : Length.ToString();
+            Modifiers = type.Modifiers;
             Name = args.TypeSymbol.Name;
             Namespace = args.TypeSymbol.ContainingNamespace.ToDisplayString();
-            TypeParameterList = arity != 0 ? FullName.Substring(FullName.IndexOf('<')) : string.Empty;
+            TypeList = args.TypeList;
             TypeSymbol = args.TypeSymbol;
         }
 

@@ -4,16 +4,6 @@ namespace Monkeymoto.InlineCollections
 {
     internal static class Diagnostics
     {
-        public static DiagnosticDescriptor MMIC1000_MustBeTopLevelType_Descriptor = new
-        (
-            "MMIC1000",
-            "MMIC1000: Inline collection must be a top-level type",
-            "Inline collection must be a top-level type",
-            "Usage",
-            DiagnosticSeverity.Error,
-            isEnabledByDefault: true
-        );
-
         public static DiagnosticDescriptor MMIC1001_MustHaveValidLength_Descriptor = new
         (
             "MMIC1001",
@@ -24,11 +14,11 @@ namespace Monkeymoto.InlineCollections
             isEnabledByDefault: true
         );
 
-        public static DiagnosticDescriptor MMIC1002_MustBePartialStruct_Descriptor = new
+        public static DiagnosticDescriptor MMIC1002_MustBePartialType_Descriptor = new
         (
             "MMIC1002",
-            "MMIC1002: Inline collection struct must be partial",
-            "Include `partial` modifier on inline collection struct definition",
+            "MMIC1002: Inline collection struct and all containing types must be partial",
+            "Include `partial` modifier on type `{0}` definition which contains an inline collection",
             "Usage",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true

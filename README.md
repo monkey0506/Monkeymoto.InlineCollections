@@ -51,10 +51,8 @@ following requirements:
       or the
       [InlineArrayAttribute](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.inlinearrayattribute).
       These attributes will be added by the generator to the type.
-- The type must be a top-level type. (*This restriction will be removed in a
-      future version.*)
 - The type must be declared as `public` or `internal`. (*This restriction will
-      be removed when inline collections are supported as nested types.*)
+      be removed in a future version.*)
 - The type must **not** be declared as `readonly`.
 - The type must be declared as a `partial struct`.
 - The type must declare one and only one instance field. The field type will be

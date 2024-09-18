@@ -5,7 +5,6 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
-MMIC1000 | Usage | Error | Diagnostics
 MMIC1001 | Usage | Error | Diagnostics
 MMIC1002 | Usage | Error | Diagnostics
 MMIC1003 | Usage | Error | Diagnostics
