@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using static Monkeymoto.InlineCollections.Diagnostics;
 
 namespace Monkeymoto.InlineCollections
 {
@@ -42,8 +43,10 @@ namespace Monkeymoto.InlineCollections
         {
             public readonly string DeclarationKind = default!;
             public readonly string FullName = default!;
+            public readonly bool IsFileLocal = default;
             public readonly bool IsPartial = default;
             public readonly bool IsPublicOrInternal = default;
+            public readonly bool IsReadOnly = default;
             public readonly Location Location = default!;
             public readonly string Modifiers = default!;
             public readonly string Name = default!;
@@ -59,6 +62,7 @@ namespace Monkeymoto.InlineCollections
                 typeSymbol = typeSymbol.OriginalDefinition;
                 typeDeclaration ??= (TypeDeclarationSyntax)typeSymbol.DeclaringSyntaxReferences[0]
                     .GetSyntax(cancellationToken);
+                var firstModifierKind = typeDeclaration.Modifiers.FirstOrDefault().Kind();
                 DeclarationKind = typeDeclaration switch
                 {
                     ClassDeclarationSyntax => "class",
@@ -73,12 +77,14 @@ namespace Monkeymoto.InlineCollections
                     _ => throw new NotSupportedException($"Unsupported TypeDeclarationSyntax kind: {typeDeclaration.Kind()}")
                 };
                 FullName = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+                IsFileLocal = firstModifierKind == SyntaxKind.FileKeyword;
                 IsPartial = typeDeclaration.Modifiers.Any(static x => x.IsKind(SyntaxKind.PartialKeyword));
-                IsPublicOrInternal = typeDeclaration.Modifiers.FirstOrDefault().Kind() switch
+                IsPublicOrInternal = firstModifierKind switch
                 {
                     SyntaxKind.PublicKeyword or SyntaxKind.InternalKeyword => true,
                     _ => false
                 };
+                IsReadOnly = typeDeclaration.Modifiers.Any(static x => x.IsKind(SyntaxKind.ReadOnlyKeyword));
                 Location = typeDeclaration.GetLocation();
                 Modifiers = typeDeclaration.Modifiers.ToString();
                 Name = typeSymbol.Name;
@@ -244,50 +250,49 @@ namespace Monkeymoto.InlineCollections
         {
             var diagnostics = new List<Diagnostic>();
             var hasCollectionBuilder = args.Flags.HasFlag(InlineCollectionFlags.CollectionBuilder);
+            var type = args.TypeList.Last();
             if (hasCollectionBuilder && args.TypeList.Any(static x => !x.IsPublicOrInternal))
             {
-                diagnostics.Add
-                (
-                    Diagnostic.Create
-                    (
-                        InlineCollections.Diagnostics.MMIC1000_CollectionBuilderTypeInaccessible_Descriptor,
-                        args.Location
-                    )
-                );
+                diagnostics.AddDiagnostic(MMIC1000_CollectionBuilderTypeInaccessible_Descriptor, args.Location);
             }
             if (args.Length <= 0)
             {
-                diagnostics.Add
-                (
-                    Diagnostic.Create
-                    (
-                        InlineCollections.Diagnostics.MMIC1001_MustHaveValidLength_Descriptor,
-                        args.Location
-                    )
-                );
+                diagnostics.AddDiagnostic(MMIC1001_MustHaveValidLength_Descriptor, args.Location);
+            }
+            if (args.TypeList[0].IsFileLocal)
+            {
+                diagnostics.AddDiagnostic(MMIC1002_MustNotBeFileLocalType_Descriptor, args.TypeList[0].Location);
             }
             var nonPartialTypes = args.TypeList.Where(x => !x.IsPartial);
             foreach (var nonPartialType in nonPartialTypes)
             {
-                diagnostics.Add
+                diagnostics.AddDiagnostic
                 (
-                    Diagnostic.Create
-                    (
-                        InlineCollections.Diagnostics.MMIC1002_MustBePartialType_Descriptor,
-                        nonPartialType.Location,
-                        nonPartialType.FullName
-                    )
+                    MMIC1003_MustBePartialType_Descriptor,
+                    nonPartialType.Location,
+                    nonPartialType.FullName
                 );
+            }
+            if (type.IsReadOnly)
+            {
+                diagnostics.AddDiagnostic(MMIC1004_MustNotBeReadOnly_Descriptor, args.Location);
             }
             if (args.FieldSymbol is null)
             {
-                diagnostics.Add
+                diagnostics.AddDiagnostic(MMIC1005_MustDefineExactlyOneField_Descriptor, args.Location);
+            }
+            else if
+            (
+                args.FieldSymbol.IsRequired ||
+                args.FieldSymbol.IsReadOnly ||
+                args.FieldSymbol.IsVolatile ||
+                args.FieldSymbol.IsFixedSizeBuffer
+            )
+            {
+                diagnostics.AddDiagnostic
                 (
-                    Diagnostic.Create
-                    (
-                        InlineCollections.Diagnostics.MMIC1003_MustDefineExactlyOneField_Descriptor,
-                        args.Location
-                    )
+                    MMIC1006_InvalidElementFieldModifiers_Descriptor,
+                    args.FieldSymbol.Locations.FirstOrDefault()
                 );
             }
             if (diagnostics.Any())
@@ -296,7 +301,6 @@ namespace Monkeymoto.InlineCollections
                 return;
             }
             int arity = args.TypeSymbol.Arity;
-            var type = args.TypeList.Last();
             CollectionBuilderName = hasCollectionBuilder ? GetCollectionBuilderName(in args.TypeList) : string.Empty;
             CollectionBuilderTypeParameterList = hasCollectionBuilder ?
                 GetCollectionBuilderTypeParameterList(in args.TypeList) :

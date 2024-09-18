@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using static Monkeymoto.InlineCollections.Diagnostics;
 using GeneratedSourceInfoArgs =
 (
     System.Collections.Immutable.ImmutableArray<Monkeymoto.InlineCollections.InlineCollectionTypeInfo>,
@@ -74,16 +75,13 @@ namespace Monkeymoto.InlineCollections
                 if (collectionExpression.Elements.Length > collectionLength)
                 {
                     int knownExpressionLength = collectionExpression.Elements.Where(x => x is not ISpreadOperation).Count();
-                    diagnostics.Add
+                    diagnostics.AddDiagnostic
                     (
-                        Diagnostic.Create
-                        (
-                            knownExpressionLength > collectionLength ?
-                                Diagnostics.MMIC1004_CollectionExpressionTooLarge_Descriptor :
-                                Diagnostics.MMIC1005_CollectionExpressionMaybeTooLarge_Descriptor,
-                            collectionExpression.Syntax.GetLocation(),
-                            collectionLength
-                        )
+                        knownExpressionLength > collectionLength ?
+                            MMIC1007_CollectionExpressionTooLarge_Descriptor :
+                            MMIC1008_CollectionExpressionMaybeTooLarge_Descriptor,
+                        collectionExpression.Syntax.GetLocation(),
+                        collectionLength
                     );
                 }
             }

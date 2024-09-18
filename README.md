@@ -57,7 +57,8 @@ following requirements:
       feature has been selected.
     - Additionally, the type and all containing types must be declared as
           `public` or `internal` when this feature is selected.
-- The type must **not** be declared as `file` local or `readonly`.
+- The type must **not** be declared as `file` local or `readonly` and must
+      **not** be declared inside of a `file` local type.
 - The type must be declared as a `partial struct`. If the type is nested, all
       containing types must also be declared as `partial`.
 - The type must declare one and only one instance field. The field type will be
