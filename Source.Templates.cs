@@ -43,6 +43,19 @@
         /// </remarks>
         public void Clear() => this = default;";
 
+        private const string Template_CollectionBuilderAttribute =
+@"
+    [CollectionBuilder(typeof({0}), ""Create"")]";
+
+        private const string Template_CollectionBuilderClassDeclaration =
+@"
+    
+    file static class {0}
+    {{
+        public static {1} Create{2}(ReadOnlySpan<{3}> span) =>
+            Implementation.FromReadOnlySpan<{1}, {3}>(span);
+    }}";
+
         private const string Template_ContainsMethod =
 @"
         /// <summary>
@@ -439,19 +452,12 @@ namespace Monkeymoto.InlineCollections
         private const string Template_InlineCollection =
 @"
 namespace {0}
-{{{1}
-
-    file static class {2}
-    {{
-        public static {3} Create{4}(ReadOnlySpan<{5}> span) =>
-            Implementation.FromReadOnlySpan<{3}, {5}>(span);
-    }}
+{{{1}{2}
 }}";
 
         private const string Template_InlineCollection_StructDeclaration =
 @"
-    [InlineArray({0})]
-    [CollectionBuilder(typeof({1}), ""Create"")]
+    [InlineArray({0})]{1}
     {2} struct {3} :
         {4}
     {{{5}

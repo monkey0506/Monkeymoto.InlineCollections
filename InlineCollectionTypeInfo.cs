@@ -223,7 +223,10 @@ namespace Monkeymoto.InlineCollections
             if (inlineCollectionAttributeData.ConstructorArguments.Any())
             {
                 var value = (IConvertible?)inlineCollectionAttributeData.ConstructorArguments[0].Value;
-                args.Flags = (InlineCollectionFlags)(value?.ToInt32(null) ?? (int)InlineCollectionFlags.CollectionBuilder);
+                args.Flags = GetFlags
+                (
+                    (InlineCollectionFlags)(value?.ToInt32(null) ?? (int)InlineCollectionFlags.CollectionBuilder)
+                );
             }
             args.Length = (int?)inlineCollectionAttributeData.NamedArguments.Where(static x => x.Key == "Length")
                 .SingleOrDefault().Value.Value ?? -1;
@@ -276,12 +279,15 @@ namespace Monkeymoto.InlineCollections
             }
             int arity = args.TypeSymbol.Arity;
             var type = args.TypeList.Last();
-            CollectionBuilderName = GetCollectionBuilderName(in args.TypeList);
-            CollectionBuilderTypeParameterList = GetCollectionBuilderTypeParameterList(in args.TypeList);
+            var hasCollectionBuilder = args.Flags.HasFlag(InlineCollectionFlags.CollectionBuilder);
+            CollectionBuilderName = hasCollectionBuilder ? GetCollectionBuilderName(in args.TypeList) : string.Empty;
+            CollectionBuilderTypeParameterList = hasCollectionBuilder ?
+                GetCollectionBuilderTypeParameterList(in args.TypeList) :
+                string.Empty;
             Diagnostics = [];
             ElementType = args.FieldSymbol!.Type.ToDisplayString();
             ElementZeroFieldName = args.FieldSymbol.Name;
-            Flags = GetFlags(args.Flags);
+            Flags = args.Flags;
             FullName = type.FullName;
             FullNameWithContainingTypeNames = GetFullNameWithContainingTypeNames(in args.TypeList);
             Length = args.Length;

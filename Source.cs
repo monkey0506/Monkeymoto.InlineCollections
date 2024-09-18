@@ -49,13 +49,9 @@ namespace Monkeymoto.InlineCollections
         public static string GenerateForType(in InlineCollectionTypeInfo typeInfo) => string.Format
         (
             Template_InlineCollection,
-            typeInfo.Namespace,                          // 0
-            GetTypeDeclarationsSource(in typeInfo),      // 1
-            typeInfo.CollectionBuilderName,              // 2
-            typeInfo.FullNameWithContainingTypeNames,    // 3
-            typeInfo.CollectionBuilderTypeParameterList, // 4
-            typeInfo.ElementType                         // 5
-
+            typeInfo.Namespace,                                     // 0
+            GetTypeDeclarationsSource(in typeInfo),                 // 1
+            GetCollectionBuilderClassDeclarationSource(in typeInfo) // 2
         );
 
         private static string GetArrayConversionOperatorsSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
@@ -84,6 +80,25 @@ namespace Monkeymoto.InlineCollections
             Template_ClearMethod,
             InlineCollectionFlags.ClearMethod,
             typeInfo.Flags
+        );
+
+        private static string GetCollectionBuilderAttributeSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
+        (
+            Template_CollectionBuilderAttribute,
+            InlineCollectionFlags.CollectionBuilder,
+            typeInfo.Flags,
+            typeInfo.CollectionBuilderName // 0
+        );
+
+        private static string GetCollectionBuilderClassDeclarationSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
+        (
+            Template_CollectionBuilderClassDeclaration,
+            InlineCollectionFlags.CollectionBuilder,
+            typeInfo.Flags,
+            typeInfo.CollectionBuilderName,              // 0
+            typeInfo.FullNameWithContainingTypeNames,    // 1
+            typeInfo.CollectionBuilderTypeParameterList, // 2
+            typeInfo.ElementType                         // 3
         );
 
         private static string GetContainsMethodSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
@@ -398,12 +413,12 @@ namespace Monkeymoto.InlineCollections
             string.Format
             (
                 Template_InlineCollection_StructDeclaration,
-                typeInfo.Length,                     // 0
-                typeInfo.CollectionBuilderName,      // 1
-                typeInfo.Modifiers,                  // 2
-                typeInfo.FullName,                   // 3
-                GetInterfaceList(in typeInfo),       // 4
-                GetInlineCollectionBody(in typeInfo) // 5
+                typeInfo.Length,                                  // 0
+                GetCollectionBuilderAttributeSource(in typeInfo), // 1
+                typeInfo.Modifiers,                               // 2
+                typeInfo.FullName,                                // 3
+                GetInterfaceList(in typeInfo),                    // 4
+                GetInlineCollectionBody(in typeInfo)              // 5
             )
         ).Replace("\r\n", "\n")
             .Replace("\n\r", "\n")

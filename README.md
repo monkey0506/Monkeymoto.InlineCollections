@@ -22,9 +22,10 @@ public partial struct InlineCollection8<T>
 }
 ````
 
-By default, this will add collection expression support, including analyzers
-to help prevent overflowing the size of the collection. Additional features can
-be selected for code generation using the
+By default, this will only add the
+[InlineArrayAttribute](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.inlinearrayattribute)
+to your type. All other supported features are explicitly opt-in, and can be
+selected for code generation using the
 [InlineCollectionFlags](InlineCollectionFlags.cs) constructor:
 
 ````C#
@@ -47,10 +48,13 @@ following requirements:
 - The `InlineCollectionAttribute` must have a positive, non-zero `Length`
       specified.
 - The type must **not** have the
-      [CollectionBuilderAttribute](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.collectionbuilderattribute)
-      or the
       [InlineArrayAttribute](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.inlinearrayattribute).
-      These attributes will be added by the generator to the type.
+      This attribute will be added by the generator to the type.
+- If the `InlineCollectionFlags.CollectionBuilder` feature is selected, the
+      type must **not** have the
+      [CollectionBuilderAttribute](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.collectionbuilderattribute).
+      This attribute will be added by the generator to the type when this
+      feature has been selected.
 - The type must be declared as `public` or `internal`. (*This restriction will
       be removed in a future version.*)
 - The type must **not** be declared as `readonly`.
