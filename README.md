@@ -58,7 +58,8 @@ following requirements:
 - The type must be declared as `public` or `internal`. (*This restriction will
       be removed in a future version.*)
 - The type must **not** be declared as `readonly`.
-- The type must be declared as a `partial struct`.
+- The type must be declared as a `partial struct`. If the type is nested, all
+      containing types must also be declared as `partial`.
 - The type must declare one and only one instance field. The field type will be
       the element type of the collection. The instance field must **not** be
       declared as `required`, `readonly`, `volatile`, or as a fixed size
