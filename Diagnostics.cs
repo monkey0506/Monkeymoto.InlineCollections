@@ -4,6 +4,16 @@ namespace Monkeymoto.InlineCollections
 {
     internal static class Diagnostics
     {
+        public static DiagnosticDescriptor MMIC1000_CollectionBuilderTypeInaccessible_Descriptor = new
+        (
+            "MMIC1000",
+            "MMIC1000: Inline collection inaccessible to collection builder",
+            "Collection builder requires inline collection struct and all containing types to be `public` or `internal`",
+            "Usage",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true
+        );
+
         public static DiagnosticDescriptor MMIC1001_MustHaveValidLength_Descriptor = new
         (
             "MMIC1001",

@@ -43,6 +43,7 @@ namespace Monkeymoto.InlineCollections
             public readonly string DeclarationKind = default!;
             public readonly string FullName = default!;
             public readonly bool IsPartial = default;
+            public readonly bool IsPublicOrInternal = default;
             public readonly Location Location = default!;
             public readonly string Modifiers = default!;
             public readonly string Name = default!;
@@ -73,6 +74,11 @@ namespace Monkeymoto.InlineCollections
                 };
                 FullName = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
                 IsPartial = typeDeclaration.Modifiers.Any(static x => x.IsKind(SyntaxKind.PartialKeyword));
+                IsPublicOrInternal = typeDeclaration.Modifiers.FirstOrDefault().Kind() switch
+                {
+                    SyntaxKind.PublicKeyword or SyntaxKind.InternalKeyword => true,
+                    _ => false
+                };
                 Location = typeDeclaration.GetLocation();
                 Modifiers = typeDeclaration.Modifiers.ToString();
                 Name = typeSymbol.Name;
@@ -237,6 +243,18 @@ namespace Monkeymoto.InlineCollections
         private InlineCollectionTypeInfo(in ConstructorArgs args)
         {
             var diagnostics = new List<Diagnostic>();
+            var hasCollectionBuilder = args.Flags.HasFlag(InlineCollectionFlags.CollectionBuilder);
+            if (hasCollectionBuilder && args.TypeList.Any(static x => !x.IsPublicOrInternal))
+            {
+                diagnostics.Add
+                (
+                    Diagnostic.Create
+                    (
+                        InlineCollections.Diagnostics.MMIC1000_CollectionBuilderTypeInaccessible_Descriptor,
+                        args.Location
+                    )
+                );
+            }
             if (args.Length <= 0)
             {
                 diagnostics.Add
@@ -279,7 +297,6 @@ namespace Monkeymoto.InlineCollections
             }
             int arity = args.TypeSymbol.Arity;
             var type = args.TypeList.Last();
-            var hasCollectionBuilder = args.Flags.HasFlag(InlineCollectionFlags.CollectionBuilder);
             CollectionBuilderName = hasCollectionBuilder ? GetCollectionBuilderName(in args.TypeList) : string.Empty;
             CollectionBuilderTypeParameterList = hasCollectionBuilder ?
                 GetCollectionBuilderTypeParameterList(in args.TypeList) :
