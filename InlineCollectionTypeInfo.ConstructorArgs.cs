@@ -8,7 +8,7 @@ namespace Monkeymoto.InlineCollections
         private struct ConstructorArgs
         {
             public IFieldSymbol? FieldSymbol;
-            public InlineCollectionFlags Flags;
+            public InlineCollectionOptions Flags;
             public int Length;
             public Location Location;
             public ImmutableArray<TypeListNode> TypeList;

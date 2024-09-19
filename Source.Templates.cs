@@ -537,9 +537,9 @@ using System;
 namespace Monkeymoto.InlineCollections
 {
     [AttributeUsage(AttributeTargets.Struct, AllowMultiple = false)]
-    internal sealed class InlineCollectionAttribute(InlineCollectionFlags flags = default) : Attribute
+    internal sealed class InlineCollectionAttribute(InlineCollectionOptions flags = default) : Attribute
     {
-        public InlineCollectionFlags Flags => flags;
+        public InlineCollectionOptions Flags => flags;
         public required int Length { get; init; }
     }
 }

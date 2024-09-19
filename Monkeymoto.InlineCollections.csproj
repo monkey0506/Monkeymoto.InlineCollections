@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="ExceptionMessages.cs" />
-    <EmbeddedResource Include="InlineCollectionFlags.cs" />
+    <EmbeddedResource Include="InlineCollectionOptions.cs" />
   </ItemGroup>
 
 </Project>

@@ -12,7 +12,7 @@ namespace Monkeymoto.InlineCollections
     /// </summary>
     /// <seealso cref="InlineCollectionAttribute"/>
     [Flags]
-    internal enum InlineCollectionFlags
+    internal enum InlineCollectionOptions
     {
         /// <summary>
         /// Generates the <see cref="InlineArrayAttribute">InlineArrayAttribute</see> for the collection, but adds no

@@ -26,10 +26,10 @@ By default, this will only add the
 [InlineArrayAttribute](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.inlinearrayattribute)
 to your type. All other supported features are explicitly opt-in, and can be
 selected for code generation using the
-[InlineCollectionFlags](InlineCollectionFlags.cs) constructor:
+[InlineCollectionOptions](InlineCollectionOptions.cs) constructor:
 
 ````C#
-[InlineCollection(InlineCollectionFlags.IListT, Length = 8)]
+[InlineCollection(InlineCollectionOptions.IListT, Length = 8)]
 public partial struct InlineList8<T>
 {
 	private T element0;
@@ -50,7 +50,7 @@ following requirements:
 - The type must **not** have the
       [InlineArrayAttribute](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.inlinearrayattribute).
       This attribute will be added by the generator to the type.
-- If the `InlineCollectionFlags.CollectionBuilder` feature is selected, the
+- If the `InlineCollectionOptions.CollectionBuilder` feature is selected, the
       type must **not** have the
       [CollectionBuilderAttribute](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.collectionbuilderattribute).
       This attribute will be added by the generator to the type when this
@@ -66,71 +66,71 @@ following requirements:
       declared as `required`, `readonly`, `volatile`, or as a fixed size
       buffer.
 - The type must not declare any methods, properties, or explicit interface
-      implementations that conflict with the `InlineCollectionFlags` passed to
-      the `InlineCollectionAttribute` constructor. For example, if using
-      `InlineCollectionFlags.IndexOfMethod`, your type must not declare a
+      implementations that conflict with the `InlineCollectionOptions` passed
+      to the `InlineCollectionAttribute` constructor. For example, if using
+      `InlineCollectionOptions.IndexOfMethod`, your type must not declare a
       method with the signature `int IndexOf(T)` (where `T` is the collection's
       element type).
 
-## `InlineCollectionFlags` features
+## `InlineCollectionOptions` features
 
 All inline collection features are explicitly opt-in on a per-type basis via
-the `InlineCollectionFlags` passed to the `InlineCollectionAttribute`
-constructor. The `InlineCollectionFlags` can be combined using the bitwise `OR`
-operator:
+the `InlineCollectionOptions` passed to the `InlineCollectionAttribute`
+constructor. The `InlineCollectionOptions` can be combined using the bitwise
+`OR` operator:
 
 ````C#
-[InlineCollection(InlineCollectionFlags.IListT | InlineCollectionFlags.LengthProperty, Length = 8)]
+[InlineCollection(InlineCollectionOptions.IListT | InlineCollectionOptions.LengthProperty, Length = 8)]
 internal struct MyCollection
 {
     private int element0;
 }
 ````
 
-This would select both the `InlineCollectionFlags.IListT` and
-`InlineCollectionFlags.LengthProperty` features for your collection type
+This would select both the `InlineCollectionOptions.IListT` and
+`InlineCollectionOptions.LengthProperty` features for your collection type
 `MyCollection`.
 
 ### Interface features
 
 Interface features (those whose name begins with an `interface` name, such as
-`InlineCollectionFlags.IEnumerable`) will implement that interface for your
+`InlineCollectionOptions.IEnumerable`) will implement that interface for your
 collection type. Generic interface names have a `-T` suffix (such as
-`InlineCollectionFlags.IEnumerableT`). The normal interface inheritance rules
-are applied, so `InlineCollectionFlags.IEnumerableT` *implies* and will always
-include `InlineCollectionFlags.IEnumerable`.
+`InlineCollectionOptions.IEnumerableT`). The normal interface inheritance rules
+are applied, so `InlineCollectionOptions.IEnumerableT` *implies* and will
+always include `InlineCollectionOptions.IEnumerable`.
 
 ### Method features
 
 Method features (those with a `-Method` suffix, such as
-`InlineCollectionFlags.ContainsMethod`) will produce `public` instance methods
-for your collection type.
+`InlineCollectionOptions.ContainsMethod`) will produce `public` instance
+methods for your collection type.
 
 ### Operator features
 
 Operator features (those with an `-Operator[s]` suffix, such as
-`InlineCollectionFlags.ArrayConversionOperators`) will produce `public static`
-operator methods for your collection type.
+`InlineCollectionOptions.ArrayConversionOperators`) will produce `public
+static` operator methods for your collection type.
 
 ### Property features
 
 Property features (those with a `-Property` suffix, such as
-`InlineCollectionFlags.LengthProperty`) will produce `public readonly`
+`InlineCollectionOptions.LengthProperty`) will produce `public readonly`
 properties for your collection type. Currently there are no property features
 that support modifying the collection, as indexer support is already built-in
 for inline arrays.
 
 ### Other features
 
-The `InlineCollectionFlags.CollectionBuilder` feature will add support for
+The `InlineCollectionOptions.CollectionBuilder` feature will add support for
 collection expressions by generating a collection builder class for your type.
 Analyzers will check collection expressions for your type to help detect if
 the collection expression is too large for your type.
 
-The `InlineCollectionFlags.RefStructEnumerator` feature will add a
+The `InlineCollectionOptions.RefStructEnumerator` feature will add a
 `public ref struct Enumerator` nested type inside your type. When included,
 this type will be the return type of the `GetEnumerator()` method (the
-`InlineCollectionFlags.GetEnumeratorMethod` feature is implied), and the
+`InlineCollectionOptions.GetEnumeratorMethod` feature is implied), and the
 [IEnumerable](https://learn.microsoft.com/en-us/dotnet/api/system.collections.ienumerable)
 and
 [IEnumerable&lt;T&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1)
@@ -139,7 +139,7 @@ features) will throw a
 [NotSupportedException](https://learn.microsoft.com/en-us/dotnet/api/system.notsupportedexception)
 at runtime.
 
-The special feature `InlineCollectionFlags.Everything` will include all
+The special feature `InlineCollectionOptions.Everything` will include all
 available features for your collection type.
 
 ### Selecting the right features
@@ -199,8 +199,8 @@ other interface features, it is unavoidable to include those features without
 also including these interfaces.
 
 Boxing conversions during enumeration may still be avoided by including the
-`InlineCollectionFlags.RefStructEnumerator` feature. This type will allow your
-collection to implement an explicit `GetEnumerator()` method that does not
+`InlineCollectionOptions.RefStructEnumerator` feature. This type will allow
+your collection to implement an explicit `GetEnumerator()` method that does not
 require boxing.
 
 *Note: Inline arrays already support loop-based enumeration out-of-the-box.

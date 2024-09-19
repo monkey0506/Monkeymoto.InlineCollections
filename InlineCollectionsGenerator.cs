@@ -93,7 +93,7 @@ namespace Monkeymoto.InlineCollections
             context.RegisterPostInitializationOutput(static context =>
             {
                 context.AddSource(Source.InlineCollectionAttribute_FileName, Source.GetInlineCollectionAttributeSource());
-                context.AddSource(Source.InlineCollectionFlags_FileName, Source.GetInlineCollectionFlagsSource());
+                context.AddSource(Source.InlineCollectionOptions_FileName, Source.GetInlineCollectionOptionsSource());
             });
             var inlineCollectionTypes = context.SyntaxProvider.ForAttributeWithMetadataName
             (

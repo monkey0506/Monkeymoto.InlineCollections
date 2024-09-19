@@ -13,15 +13,15 @@ namespace Monkeymoto.InlineCollections
         public const string FileName = "Monkeymoto.InlineCollections.GeneratedCollections.g.cs";
         public static readonly string InlineCollectionAttribute_FileName = $"{InlineCollectionAttribute_Name}.g.cs";
         public const string InlineCollectionAttribute_Name = "Monkeymoto.InlineCollections.InlineCollectionAttribute";
-        public const string InlineCollectionFlags_FileName = "Monkeymoto.InlineCollections.InlineCollectionFlags.g.cs";
-        private static readonly string InlineCollectionFlags_SourceText;
+        public const string InlineCollectionOptions_FileName = "Monkeymoto.InlineCollections.InlineCollectionOptions.g.cs";
+        private static readonly string InlineCollectionOptions_SourceText;
 
         static Source()
         {
-            var assembly = typeof(InlineCollectionFlags).Assembly;
+            var assembly = typeof(InlineCollectionOptions).Assembly;
             var resources = assembly.GetManifestResourceNames();
             ExceptionMessages_SourceText = GetExceptionMessagesSourceFromAssembly(assembly, resources);
-            InlineCollectionFlags_SourceText = GetInlineCollectionFlagsSourceFromAssembly(assembly, resources);
+            InlineCollectionOptions_SourceText = GetInlineCollectionOptionsSourceFromAssembly(assembly, resources);
         }
 
         private static StringBuilder AppendIf(this StringBuilder sb, bool condition, string stringToAppend) =>
@@ -56,7 +56,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetArrayConversionOperatorsSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_ArrayConversionOperators,
-            InlineCollectionFlags.ArrayConversionOperators,
+            InlineCollectionOptions.ArrayConversionOperators,
             typeInfo.Flags,
             typeInfo.ElementType, // 0
             typeInfo.FullName     // 1
@@ -65,7 +65,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetAsSpanReadOnlySpanMethodsSource(in InlineCollectionTypeInfo typeInfo, string length) => GetSourceByFlag
         (
             Template_AsSpanReadOnlySpanMethods,
-            InlineCollectionFlags.AsSpanReadOnlySpanMethods,
+            InlineCollectionOptions.AsSpanReadOnlySpanMethods,
             typeInfo.Flags,
             "public ",                     // 0
             typeInfo.ElementType,          // 1
@@ -77,14 +77,14 @@ namespace Monkeymoto.InlineCollections
         private static string GetClearMethodSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_ClearMethod,
-            InlineCollectionFlags.ClearMethod,
+            InlineCollectionOptions.ClearMethod,
             typeInfo.Flags
         );
 
         private static string GetCollectionBuilderAttributeSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_CollectionBuilderAttribute,
-            InlineCollectionFlags.CollectionBuilder,
+            InlineCollectionOptions.CollectionBuilder,
             typeInfo.Flags,
             typeInfo.CollectionBuilderName // 0
         );
@@ -92,7 +92,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetCollectionBuilderClassDeclarationSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_CollectionBuilderClassDeclaration,
-            InlineCollectionFlags.CollectionBuilder,
+            InlineCollectionOptions.CollectionBuilder,
             typeInfo.Flags,
             typeInfo.CollectionBuilderName,              // 0
             typeInfo.FullNameWithContainingTypeNames,    // 1
@@ -103,7 +103,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetContainsMethodSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_ContainsMethod,
-            InlineCollectionFlags.ContainsMethod,
+            InlineCollectionOptions.ContainsMethod,
             typeInfo.Flags,
             typeInfo.ElementType // 0
         );
@@ -111,7 +111,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetCopyToMethodSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_CopyToMethod,
-            InlineCollectionFlags.CopyToMethod,
+            InlineCollectionOptions.CopyToMethod,
             typeInfo.Flags,
             typeInfo.ElementType // 0
         );
@@ -148,7 +148,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetFillMethodSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_FillMethod,
-            InlineCollectionFlags.FillMethod,
+            InlineCollectionOptions.FillMethod,
             typeInfo.Flags,
             typeInfo.ElementType // 0
         );
@@ -157,10 +157,10 @@ namespace Monkeymoto.InlineCollections
 
         private static string GetGetEnumeratorMethodSource(in InlineCollectionTypeInfo typeInfo, string length) => GetSourceByFlag
         (
-            typeInfo.Flags.HasFlag(InlineCollectionFlags.RefStructEnumerator) ?
+            typeInfo.Flags.HasFlag(InlineCollectionOptions.RefStructEnumerator) ?
                 Template_GetEnumeratorMethod_ImplRefStructEnumerator :
                 Template_GetEnumeratorMethod_ImplExplicit,
-            InlineCollectionFlags.GetEnumeratorMethod,
+            InlineCollectionOptions.GetEnumeratorMethod,
             typeInfo.Flags,
             typeInfo.ElementType,              // 0
             GetGetEnumeratorBodySource(length) // 1
@@ -169,7 +169,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetICollectionSource(in InlineCollectionTypeInfo typeInfo, string length) => GetSourceByFlag
         (
             Template_ICollection,
-            InlineCollectionFlags.ICollection,
+            InlineCollectionOptions.ICollection,
             typeInfo.Flags,
             length,                                                       // 0
             nameof(NotSupportedException_SynchronizedAccessNotSupported), // 1
@@ -178,7 +178,7 @@ namespace Monkeymoto.InlineCollections
 
         private static string GetICollectionT_ContainsMethod_Source(in InlineCollectionTypeInfo typeInfo) => GetSourceIf
         (
-            typeInfo.Flags.HasNoneOf(InlineCollectionFlags.ContainsMethod, InlineCollectionFlags.Everything),
+            typeInfo.Flags.HasNoneOf(InlineCollectionOptions.ContainsMethod, InlineCollectionOptions.Everything),
             Template_ICollectionT_Contains_ImplExplicit,
             typeInfo.ElementType // 0
         );
@@ -186,7 +186,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetICollectionTSource(in InlineCollectionTypeInfo typeInfo, string length) => GetSourceByFlag
         (
             Template_ICollectionT,
-            InlineCollectionFlags.ICollectionT,
+            InlineCollectionOptions.ICollectionT,
             typeInfo.Flags,
             typeInfo.ElementType,                              // 0
             length,                                            // 1
@@ -195,26 +195,26 @@ namespace Monkeymoto.InlineCollections
         );
 
         private static string GetIEnumerableSource(in InlineCollectionTypeInfo typeInfo, string length) =>
-            typeInfo.Flags.HasFlag(InlineCollectionFlags.IEnumerable) ?
-                typeInfo.Flags.HasFlag(InlineCollectionFlags.GetEnumeratorMethod) ?
-                    typeInfo.Flags.HasFlag(InlineCollectionFlags.RefStructEnumerator) ?
+            typeInfo.Flags.HasFlag(InlineCollectionOptions.IEnumerable) ?
+                typeInfo.Flags.HasFlag(InlineCollectionOptions.GetEnumeratorMethod) ?
+                    typeInfo.Flags.HasFlag(InlineCollectionOptions.RefStructEnumerator) ?
                         Template_IEnumerable_ImplRefStructEnumerator :
                         Template_IEnumerable_ImplMethod :
-                    typeInfo.Flags.HasFlag(InlineCollectionFlags.IEnumerableT) ?
+                    typeInfo.Flags.HasFlag(InlineCollectionOptions.IEnumerableT) ?
                         string.Format(Template_IEnumerable_ImplIEnumerableT, typeInfo.ElementType) :
                         string.Format(Template_IEnumerable_ImplExplicit, GetGetEnumeratorBodySource(length)) :
                 string.Empty;
 
         private static string GetIEnumerableTSource(in InlineCollectionTypeInfo typeInfo, string length) =>
-            typeInfo.Flags.HasFlag(InlineCollectionFlags.GetEnumeratorMethod) ?
-                typeInfo.Flags.HasFlag(InlineCollectionFlags.RefStructEnumerator) ?
+            typeInfo.Flags.HasFlag(InlineCollectionOptions.GetEnumeratorMethod) ?
+                typeInfo.Flags.HasFlag(InlineCollectionOptions.RefStructEnumerator) ?
                     string.Format(Template_IEnumerableT_ImplRefStructEnumerator, typeInfo.ElementType) :
                     string.Empty :
                 string.Format(Template_IEnumerableT_ImplExplicit, typeInfo.ElementType, GetGetEnumeratorBodySource(length));
 
         private static string GetIInlineCollectionSource(in InlineCollectionTypeInfo typeInfo, string length) => GetSourceIf
         (
-            !typeInfo.Flags.HasFlag(InlineCollectionFlags.AsSpanReadOnlySpanMethods),
+            !typeInfo.Flags.HasFlag(InlineCollectionOptions.AsSpanReadOnlySpanMethods),
             Template_IInlineCollection_ImplExplicit,
             string.Empty,                                  // 0
             typeInfo.ElementType,                          // 1
@@ -226,7 +226,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetIListSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_IList,
-            InlineCollectionFlags.IList,
+            InlineCollectionOptions.IList,
             typeInfo.Flags,
             typeInfo.ElementType,                             // 0
             nameof(NotSupportedException_FixedSizeCollection) // 1
@@ -234,7 +234,7 @@ namespace Monkeymoto.InlineCollections
 
         private static string GetIListT_IndexOfMethod_Source(in InlineCollectionTypeInfo typeInfo) => GetSourceIf
         (
-            typeInfo.Flags.HasNoneOf(InlineCollectionFlags.IndexOfMethod, InlineCollectionFlags.Everything),
+            typeInfo.Flags.HasNoneOf(InlineCollectionOptions.IndexOfMethod, InlineCollectionOptions.Everything),
             Template_IListT_IndexOf_ImplExplict,
             typeInfo.ElementType // 0
         );
@@ -242,7 +242,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetIListTSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_IListT,
-            InlineCollectionFlags.IListT,
+            InlineCollectionOptions.IListT,
             typeInfo.Flags,
             typeInfo.ElementType,                             // 0
             GetIListT_IndexOfMethod_Source(in typeInfo),      // 1
@@ -252,7 +252,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetIndexOfMethodSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_IndexOfMethod,
-            InlineCollectionFlags.IndexOfMethod,
+            InlineCollectionOptions.IndexOfMethod,
             typeInfo.Flags,
             typeInfo.ElementType // 0
         );
@@ -303,11 +303,11 @@ namespace Monkeymoto.InlineCollections
             .TrimEnd()
             .ToString();
 
-        public static string GetInlineCollectionFlagsSource() => InlineCollectionFlags_SourceText;
+        public static string GetInlineCollectionOptionsSource() => InlineCollectionOptions_SourceText;
 
-        private static string GetInlineCollectionFlagsSourceFromAssembly(Assembly assembly, string[] resources)
+        private static string GetInlineCollectionOptionsSourceFromAssembly(Assembly assembly, string[] resources)
         {
-            var resourcePath = resources.Where(x => x.EndsWith($"{nameof(InlineCollectionFlags)}.cs")).Single();
+            var resourcePath = resources.Where(x => x.EndsWith($"{nameof(InlineCollectionOptions)}.cs")).Single();
             using var stream = assembly.GetManifestResourceStream(resourcePath);
             using var streamReader = new StreamReader(stream);
             var sb = new StringBuilder("// <auto-generated>").AppendLine();
@@ -316,16 +316,16 @@ namespace Monkeymoto.InlineCollections
 
         private static string GetInterfaceList(in InlineCollectionTypeInfo typeInfo)
         {
-            bool isICollection = typeInfo.Flags.HasFlag(InlineCollectionFlags.ICollection);
-            bool isICollectionT = typeInfo.Flags.HasFlag(InlineCollectionFlags.ICollectionT);
-            bool isIEnumerable = typeInfo.Flags.HasFlag(InlineCollectionFlags.IEnumerable);
-            bool isIEnumerableT = typeInfo.Flags.HasFlag(InlineCollectionFlags.IEnumerableT);
-            bool isIList = typeInfo.Flags.HasFlag(InlineCollectionFlags.IList);
-            bool isIListT = typeInfo.Flags.HasFlag(InlineCollectionFlags.IListT);
-            bool isIReadOnlyCollectionT = typeInfo.Flags.HasFlag(InlineCollectionFlags.IReadOnlyCollectionT);
-            bool isIReadOnlyListT = typeInfo.Flags.HasFlag(InlineCollectionFlags.IReadOnlyListT);
-            bool isIStructuralComparable = typeInfo.Flags.HasFlag(InlineCollectionFlags.IStructuralComparable);
-            bool isIStructuralEquatable = typeInfo.Flags.HasFlag(InlineCollectionFlags.IStructuralEquatable);
+            bool isICollection = typeInfo.Flags.HasFlag(InlineCollectionOptions.ICollection);
+            bool isICollectionT = typeInfo.Flags.HasFlag(InlineCollectionOptions.ICollectionT);
+            bool isIEnumerable = typeInfo.Flags.HasFlag(InlineCollectionOptions.IEnumerable);
+            bool isIEnumerableT = typeInfo.Flags.HasFlag(InlineCollectionOptions.IEnumerableT);
+            bool isIList = typeInfo.Flags.HasFlag(InlineCollectionOptions.IList);
+            bool isIListT = typeInfo.Flags.HasFlag(InlineCollectionOptions.IListT);
+            bool isIReadOnlyCollectionT = typeInfo.Flags.HasFlag(InlineCollectionOptions.IReadOnlyCollectionT);
+            bool isIReadOnlyListT = typeInfo.Flags.HasFlag(InlineCollectionOptions.IReadOnlyListT);
+            bool isIStructuralComparable = typeInfo.Flags.HasFlag(InlineCollectionOptions.IStructuralComparable);
+            bool isIStructuralEquatable = typeInfo.Flags.HasFlag(InlineCollectionOptions.IStructuralEquatable);
             bool explicitICollection = !isIList && isICollection;
             bool explicitICollectionT = !isIListT && isICollectionT;
             bool explicitIEnumerableT = !isICollectionT && !isIListT && !isIReadOnlyCollectionT && !isIReadOnlyListT && isIEnumerableT;
@@ -349,7 +349,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetIReadOnlyCollectionTSource(in InlineCollectionTypeInfo typeInfo, string length) => GetSourceByFlag
         (
             Template_IReadOnlyCollectionT,
-            InlineCollectionFlags.IReadOnlyCollectionT,
+            InlineCollectionOptions.IReadOnlyCollectionT,
             typeInfo.Flags,
             typeInfo.ElementType, // 0
             length                // 1
@@ -358,7 +358,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetIReadOnlyListTSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_IReadOnlyListT,
-            InlineCollectionFlags.IReadOnlyListT,
+            InlineCollectionOptions.IReadOnlyListT,
             typeInfo.Flags,
             typeInfo.ElementType // 0
         );
@@ -366,7 +366,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetIStructuralComparableSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_IStructuralComparable,
-            InlineCollectionFlags.IStructuralComparable,
+            InlineCollectionOptions.IStructuralComparable,
             typeInfo.Flags,
             typeInfo.FullName,   // 0
             typeInfo.ElementType // 1
@@ -375,7 +375,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetIStructuralEquatableSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_IStructuralEquatable,
-            InlineCollectionFlags.IStructuralEquatable,
+            InlineCollectionOptions.IStructuralEquatable,
             typeInfo.Flags,
             typeInfo.FullName,   // 0
             typeInfo.ElementType // 1
@@ -384,18 +384,18 @@ namespace Monkeymoto.InlineCollections
         private static string GetLengthPropertySource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_LengthProperty,
-            InlineCollectionFlags.LengthProperty,
+            InlineCollectionOptions.LengthProperty,
             typeInfo.Flags,
             typeInfo.Length.ToString() // 0
         );
 
         private static string GetLengthPropertyOrValueForSource(in InlineCollectionTypeInfo typeInfo) =>
-            typeInfo.Flags.HasFlag(InlineCollectionFlags.LengthProperty) ? "Length" : typeInfo.Length.ToString();
+            typeInfo.Flags.HasFlag(InlineCollectionOptions.LengthProperty) ? "Length" : typeInfo.Length.ToString();
 
         private static string GetReadOnlySpanConstructorSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_ReadOnlySpanConstructor,
-            InlineCollectionFlags.ReadOnlySpanConstructor,
+            InlineCollectionOptions.ReadOnlySpanConstructor,
             typeInfo.Flags,
             typeInfo.Name,        // 0
             typeInfo.ElementType, // 1
@@ -405,7 +405,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetRefStructEnumeratorSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_RefStructEnumerator,
-            InlineCollectionFlags.RefStructEnumerator,
+            InlineCollectionOptions.RefStructEnumerator,
             typeInfo.Flags,
             typeInfo.FullName.Replace('<', '{').Replace('>', '}'),
             typeInfo.ElementType
@@ -414,8 +414,8 @@ namespace Monkeymoto.InlineCollections
         private static string GetSourceByFlag
         (
             string template,
-            InlineCollectionFlags flagToCheck,
-            InlineCollectionFlags flags,
+            InlineCollectionOptions flagToCheck,
+            InlineCollectionOptions flags,
             params string[] formatArgs
         )
         {
@@ -446,7 +446,7 @@ namespace Monkeymoto.InlineCollections
         private static string GetToArrayMethodSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_ToArrayMethod,
-            InlineCollectionFlags.ToArrayMethod,
+            InlineCollectionOptions.ToArrayMethod,
             typeInfo.Flags,
             typeInfo.ElementType // 0
         );
@@ -490,12 +490,12 @@ namespace Monkeymoto.InlineCollections
         private static string GetTryCopyToMethodSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
         (
             Template_TryCopyToMethod,
-            InlineCollectionFlags.TryCopyToMethod,
+            InlineCollectionOptions.TryCopyToMethod,
             typeInfo.Flags,
             typeInfo.ElementType // 0
         );
 
-        private static bool HasNoneOf(this InlineCollectionFlags thisFlags, params InlineCollectionFlags[] flagsToCheck) =>
+        private static bool HasNoneOf(this InlineCollectionOptions thisFlags, params InlineCollectionOptions[] flagsToCheck) =>
             !flagsToCheck.Any(x => thisFlags.HasFlag(x));
         private static char LastOrDefault(this StringBuilder sb) => sb.Length != 0 ? sb[sb.Length - 1] : default;
 
