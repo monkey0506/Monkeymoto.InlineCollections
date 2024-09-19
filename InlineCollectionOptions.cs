@@ -83,8 +83,9 @@ namespace Monkeymoto.InlineCollections
         /// </summary>
         /// <remarks>
         /// <para>
-        /// This option does not include <see cref="IEnumerable"/>, <see cref="IEnumerableT"/>, or
-        /// <see cref="RefStructEnumerator"/>.
+        /// This option includes <see cref="RefStructEnumerator"/> by default.
+        /// </para><para>
+        /// This option does not include <see cref="IEnumerable"/> or <see cref="IEnumerableT"/>.
         /// </para><para>
         /// If the <see cref="RefStructEnumerator"/> option is included, then the return type of the generated
         /// <c>GetEnumerator</c>() method will be the generated <c>Enumerator</c> type; otherwise, the return type will be
@@ -98,7 +99,7 @@ namespace Monkeymoto.InlineCollections
         /// <seealso cref="IEnumerable.GetEnumerator()"/>
         /// <seealso cref="IEnumerable{T}.GetEnumerator()"/>
         /// <seealso cref="Span{T}.GetEnumerator()"/>
-        GetEnumeratorMethod = 1 << 7,
+        GetEnumeratorMethod = (1 << 7) | RefStructEnumerator,
         /// <summary>
         /// Generates an implementation of the <see cref="System.Collections.ICollection">ICollection</see> interface for
         /// the collection.
@@ -112,14 +113,15 @@ namespace Monkeymoto.InlineCollections
         /// </para><para>
         /// This option does not include <see cref="ICollectionT"/>.
         /// </para><para>
-        /// This option includes <see cref="IEnumerable"/>.
+        /// This option always includes <see cref="IEnumerable"/>, and includes <see cref="RefStructEnumerator"/> by
+        /// default.
         /// </para>
         /// </remarks>
         /// <seealso cref="IEnumerable"/>
         /// <seealso cref="ICollectionT"/>
         /// <seealso cref="System.Collections.ICollection"/>
         /// <seealso cref="System.Collections.IEnumerable"/>
-        ICollection = (1 << 8) | IEnumerable,
+        ICollection = (1 << 8) | IEnumerable | RefStructEnumerator,
         /// <summary>
         /// Generates an implementation of the
         /// <see cref="ICollection{T}">ICollection&lt;T&gt;</see> interface for the collection.
@@ -136,7 +138,8 @@ namespace Monkeymoto.InlineCollections
         /// </para><para>
         /// This option does not include <see cref="ICollection"/>.
         /// </para><para>
-        /// This option includes <see cref="IEnumerable"/> and <see cref="IEnumerableT"/>.
+        /// This option always includes <see cref="IEnumerable"/> and <see cref="IEnumerableT"/>, and includes
+        /// <see cref="RefStructEnumerator"/> by default.
         /// </para>
         /// </remarks>
         /// <seealso cref="ICollection"/>
@@ -145,7 +148,7 @@ namespace Monkeymoto.InlineCollections
         /// <seealso cref="System.Collections.IEnumerable"/>
         /// <seealso cref="ICollection{T}"/>
         /// <seealso cref="IEnumerable{T}"/>
-        ICollectionT = (1 << 9) | IEnumerable | IEnumerableT,
+        ICollectionT = (1 << 9) | IEnumerable | IEnumerableT | RefStructEnumerator,
         /// <summary>
         /// Generates an implementation of the <see cref="System.Collections.IEnumerable">IEnumerable</see> interface for
         /// the collection.
@@ -158,7 +161,7 @@ namespace Monkeymoto.InlineCollections
         /// <see cref="IEnumerable.GetEnumerator()">GetEnumerator</see>() will throw a
         /// <see cref="NotSupportedException">NotSupportedException</see> at runtime.
         /// </para><para>
-        /// This option does not include <see cref="IEnumerableT"/>.
+        /// This option does not include <see cref="IEnumerableT"/> or <see cref="RefStructEnumerator"/>.
         /// </para>
         /// </remarks>
         /// <seealso cref="GetEnumeratorMethod"/>
@@ -181,6 +184,8 @@ namespace Monkeymoto.InlineCollections
         /// <see cref="NotSupportedException">NotSupportedException</see> at runtime.
         /// </para><para>
         /// This option includes <see cref="IEnumerable"/>.
+        /// </para><para>
+        /// This option does not include <see cref="RefStructEnumerator"/>.
         /// </para>
         /// </remarks>
         /// <seealso cref="GetEnumeratorMethod"/>
@@ -206,7 +211,8 @@ namespace Monkeymoto.InlineCollections
         /// </para><para>
         /// This option does not include <see cref="IListT"/>.
         /// </para><para>
-        /// This option includes <see cref="ICollection"/> and <see cref="IEnumerable"/>.
+        /// This option always includes <see cref="ICollection"/> and <see cref="IEnumerable"/>, and includes
+        /// <see cref="RefStructEnumerator"/> by default.
         /// </para>
         /// </remarks>
         /// <seealso cref="ICollection"/>
@@ -215,7 +221,7 @@ namespace Monkeymoto.InlineCollections
         /// <seealso cref="System.Collections.ICollection"/>
         /// <seealso cref="System.Collections.IEnumerable"/>
         /// <seealso cref="System.Collections.IList"/>
-        IList = (1 << 12) | ICollection | IEnumerable,
+        IList = (1 << 12) | ICollection | IEnumerable | RefStructEnumerator,
         /// <summary>
         /// Generates an implementation of the
         /// <see cref="IList{T}">IList&lt;T&gt;</see> interface for the collection.
@@ -232,7 +238,8 @@ namespace Monkeymoto.InlineCollections
         /// </para><para>
         /// This option does not include <see cref="IList"/>.
         /// </para><para>
-        /// This option includes <see cref="ICollectionT"/>, <see cref="IEnumerable"/>, and <see cref="IEnumerableT"/>.
+        /// This option always includes <see cref="ICollectionT"/>, <see cref="IEnumerable"/>, and
+        /// <see cref="IEnumerableT"/>, and includes <see cref="RefStructEnumerator"/> by default.
         /// </para>
         /// </remarks>
         /// <seealso cref="ICollectionT"/>
@@ -242,7 +249,7 @@ namespace Monkeymoto.InlineCollections
         /// <seealso cref="ICollection{T}"/>
         /// <seealso cref="IEnumerable{T}"/>
         /// <seealso cref="IList{T}"/>
-        IListT = (1 << 13) | ICollectionT | IEnumerable | IEnumerableT,
+        IListT = (1 << 13) | ICollectionT | IEnumerable | IEnumerableT | RefStructEnumerator,
         /// <summary>
         /// Generates a <c>public readonly int IndexOf(T)</c> method for the collection.
         /// </summary>
@@ -258,7 +265,8 @@ namespace Monkeymoto.InlineCollections
         /// <para>
         /// All interface members are implemented explicitly.
         /// </para><para>
-        /// This option includes <see cref="IEnumerable"/> and <see cref="IEnumerableT"/>.
+        /// This option always includes <see cref="IEnumerable"/> and <see cref="IEnumerableT"/>, and includes
+        /// <see cref="RefStructEnumerator"/> by default.
         /// </para>
         /// </remarks>
         /// <seealso cref="IEnumerable"/>
@@ -266,7 +274,7 @@ namespace Monkeymoto.InlineCollections
         /// <seealso cref="System.Collections.IEnumerable"/>
         /// <seealso cref="IEnumerable{T}"/>
         /// <seealso cref="IReadOnlyCollection{T}"/>
-        IReadOnlyCollectionT = (1 << 15) | IEnumerable | IEnumerableT,
+        IReadOnlyCollectionT = (1 << 15) | IEnumerable | IEnumerableT | RefStructEnumerator,
         /// <summary>
         /// Generates an implementation of the <see cref="IReadOnlyList{T}">IReadOnlyList&lt;T&gt;</see> interface for the
         /// collection.
@@ -275,8 +283,8 @@ namespace Monkeymoto.InlineCollections
         /// <para>
         /// All interface members are implemented explicitly.
         /// </para><para>
-        /// This option includes <see cref="IEnumerable"/>, <see cref="IEnumerableT"/>, and
-        /// <see cref="IReadOnlyCollectionT"/>.
+        /// This option always includes <see cref="IEnumerable"/>, <see cref="IEnumerableT"/>, and
+        /// <see cref="IReadOnlyCollectionT"/>, and includes <see cref="RefStructEnumerator"/> by default.
         /// </para>
         /// </remarks>
         /// <seealso cref="IEnumerable"/>
@@ -285,7 +293,7 @@ namespace Monkeymoto.InlineCollections
         /// <seealso cref="System.Collections.IEnumerable"/>
         /// <seealso cref="IEnumerable{T}"/>
         /// <seealso cref="IReadOnlyCollection{T}"/>
-        IReadOnlyListT = (1 << 16) | IEnumerable | IEnumerableT | IReadOnlyCollectionT,
+        IReadOnlyListT = (1 << 16) | IEnumerable | IEnumerableT | IReadOnlyCollectionT | RefStructEnumerator,
         /// <summary>
         /// Generates an implementation of the
         /// <see cref="System.Collections.IStructuralComparable">IStructuralComparable</see> interface for the collection.

@@ -100,6 +100,17 @@ collection type. Generic interface names have a `-T` suffix (such as
 are applied, so `InlineCollectionOptions.IEnumerableT` *implies* and will
 always include `InlineCollectionOptions.IEnumerable`.
 
+*Note: The `InlineCollectionOptions.RefStructEnumerator` feature is implied in
+most cases where `InlineCollectionOptions.IEnumerable` or
+`InlineCollectionOptions.IEnumerableT` are implied, and is also implied when
+including the `InlineCollectionOptions.GetEnumeratorMethod` option. Unlike
+those other implied features, `InlineCollectionOptions.RefStructEnumerator` may
+be opted-out by using the bitwise `XOR` operator:*
+
+````C#
+InlineCollectionOptions.IListT ^ InlineCollectionOptions.RefStructEnumerator
+````
+
 ### Method features
 
 Method features (those with a `-Method` suffix, such as
