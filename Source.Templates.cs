@@ -2,6 +2,28 @@
 {
     internal static partial class Source
     {
+        /////////////////////////////////////////////////
+        ////////////////// DO NOT MOVE //////////////////
+        /////////////////////////////////////////////////
+        private const string Template_MethodBody_Template =
+@"
+        {{{{{{{0}}}
+        }}}}";
+
+        private static readonly string Template_MethodBody_Arg0 = string.Format
+        (
+            Template_MethodBody_Template,
+            "0"
+        );
+
+        private static readonly string Template_MethodBody_Arg1 = string.Format
+        (
+            Template_MethodBody_Template,
+            "1"
+        );
+        /////////////////////////////////////////////////
+        /////////////////////////////////////////////////
+
         private const string Template_ArrayConversionOperators =
 @"
         public static explicit operator {0}[]({1} collection) =>
@@ -353,15 +375,30 @@ namespace Monkeymoto.InlineCollections
                 yield return this[i];
             }}";
 
-        private const string Template_GetEnumeratorMethod =
+        private static readonly string Template_GetEnumeratorMethod_ImplExplicit = string.Format
+        (
+            Template_GetEnumeratorMethod_Template,
+            string.Empty,
+            "IEnumerator<{0}>",
+            Template_MethodBody_Arg1
+        );
+
+        private static readonly string Template_GetEnumeratorMethod_ImplRefStructEnumerator = string.Format
+        (
+            Template_GetEnumeratorMethod_Template,
+@"
+        [UnscopedRef]",
+            "Enumerator",
+            " => new(this);"
+        );
+
+        private const string Template_GetEnumeratorMethod_Template =
 @"
         /// <summary>
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
-        /// <returns>An enumerator that can be used to iterate through the collection.</returns>
-        public IEnumerator<{0}> GetEnumerator()
-        {{{1}
-        }}";
+        /// <returns>An enumerator that can be used to iterate through the collection.</returns>{0}
+        public {1} GetEnumerator(){2}";
 
         private const string Template_ICollection =
 @"
@@ -385,25 +422,53 @@ namespace Monkeymoto.InlineCollections
 @"
         readonly bool ICollection<{0}>.Contains({0} item) => Implementation.Contains(this, item);";
 
-        private const string Template_IEnumerable_ImplExplicit =
-@"
-        IEnumerator IEnumerable.GetEnumerator()
-        {{{0}
-        }}";
+        private static readonly string Template_IEnumerable_ImplExplicit = string.Format
+        (
+            Template_IEnumerable_Template,
+            Template_MethodBody_Arg0
+        );
 
-        private const string Template_IEnumerable_ImplIEnumerableT =
-@"
-        IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<{0}>)this).GetEnumerator();";
+        private static readonly string Template_IEnumerable_ImplIEnumerableT = string.Format
+        (
+            Template_IEnumerable_Template,
+            " => ((IEnumerable<{0}>)this).GetEnumerator();"
+        );
 
-        private const string Template_IEnumerable_ImplMethod =
-@"
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();";
+        private static readonly string Template_IEnumerable_ImplMethod = string.Format
+        (
+            Template_IEnumerable_Template,
+            " => GetEnumerator();"
+        );
 
-        private const string Template_IEnumerableT_ImplExplicit =
+        private static readonly string Template_IEnumerable_ImplRefStructEnumerator = string.Format
+        (
+            Template_IEnumerable_Template,
+            Template_IEnumerable_RefStructEnumeratorConversion
+        );
+
+        private const string Template_IEnumerable_RefStructEnumeratorConversion =
+@" =>
+            throw new NotSupportedException(NotSupportedException_RefStructEnumeratorConversion);";
+
+        private const string Template_IEnumerable_Template =
 @"
-        IEnumerator<{0}> IEnumerable<{0}>.GetEnumerator()
-        {{{1}
-        }}";
+        IEnumerator IEnumerable.GetEnumerator(){0}";
+
+        private static readonly string Template_IEnumerableT_ImplExplicit = string.Format
+        (
+            Template_IEnumerableT_Template,
+            Template_MethodBody_Arg1
+        );
+
+        private static readonly string Template_IEnumerableT_ImplRefStructEnumerator = string.Format
+        (
+            Template_IEnumerableT_Template,
+            Template_IEnumerable_RefStructEnumeratorConversion
+        );
+
+        private const string Template_IEnumerableT_Template =
+@"
+        IEnumerator<{{0}}> IEnumerable<{{0}}>.GetEnumerator(){0}";
 
         private static readonly string Template_IInlineCollection_ImplExplicit = Template_AsSpanReadOnlySpanMethods;
 
@@ -528,6 +593,32 @@ namespace Monkeymoto.InlineCollections
         /// The specified read-only span was larger than the size of the collection.
         /// </exception>
         public {0}(ReadOnlySpan<{1}> span) => Implementation.CopyTo(span, ref this, nameof(span));";
+
+        private const string Template_RefStructEnumerator =
+@"
+        /// <summary>
+        /// Enumerates the elements of a <see cref=""{0}""/>.
+        /// </summary>
+        public ref struct Enumerator
+        {{
+            private Span<{1}>.Enumerator enumerator;
+            
+            /// <summary>
+            /// Initializes the enumerator.
+            /// </summary>
+            /// <param name=""collection"">The collection to enumerate.</param>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal Enumerator(Span<{1}> collection)
+            {{
+                enumerator = collection.GetEnumerator();
+            }}
+            
+            /// <summary>
+            /// Advances the enumerator to the next element of the collection.
+            /// </summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool MoveNext() => enumerator.MoveNext();
+        }}";
 
         private const string Template_ToArrayMethod =
 @"

@@ -79,19 +79,25 @@ namespace Monkeymoto.InlineCollections
         /// <seealso cref="Span{T}.Fill(T)"/>
         FillMethod = 1 << 6,
         /// <summary>
-        /// Generates a <c>public <see cref="IEnumerator{T}">IEnumerator&lt;T&gt;</see> GetEnumerator()</c> method for the
-        /// collection.
+        /// Generates a <c>public GetEnumerator()</c> method for the collection.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// This option does not include <see cref="IEnumerable"/> or <see cref="IEnumerableT"/>.
+        /// This option does not include <see cref="IEnumerable"/>, <see cref="IEnumerableT"/>, or
+        /// <see cref="RefStructEnumerator"/>.
+        /// </para><para>
+        /// If the <see cref="RefStructEnumerator"/> option is included, then the return type of the generated
+        /// <c>GetEnumerator</c>() method will be the generated <c>Enumerator</c> type; otherwise, the return type will be
+        /// <see cref="IEnumerator{T}">IEnumerator&lt;T&gt;</see>.
         /// </para>
         /// </remarks>
         /// <seealso cref="IEnumerable"/>
         /// <seealso cref="IEnumerableT"/>
+        /// <seealso cref="RefStructEnumerator"/>
         /// <seealso cref="Array.GetEnumerator()"/>
         /// <seealso cref="IEnumerable.GetEnumerator()"/>
         /// <seealso cref="IEnumerable{T}.GetEnumerator()"/>
+        /// <seealso cref="Span{T}.GetEnumerator()"/>
         GetEnumeratorMethod = 1 << 7,
         /// <summary>
         /// Generates an implementation of the <see cref="System.Collections.ICollection">ICollection</see> interface for
@@ -148,11 +154,16 @@ namespace Monkeymoto.InlineCollections
         /// <para>
         /// All interface members are implemented explicitly.
         /// </para><para>
+        /// If the <see cref="RefStructEnumerator"/> option is included,
+        /// <see cref="IEnumerable.GetEnumerator()">GetEnumerator</see>() will throw a
+        /// <see cref="NotSupportedException">NotSupportedException</see> at runtime.
+        /// </para><para>
         /// This option does not include <see cref="IEnumerableT"/>.
         /// </para>
         /// </remarks>
         /// <seealso cref="GetEnumeratorMethod"/>
         /// <seealso cref="IEnumerableT"/>
+        /// <seealso cref="RefStructEnumerator"/>
         /// <seealso cref="System.Collections.IEnumerable"/>
         IEnumerable = 1 << 10,
         /// <summary>
@@ -161,14 +172,20 @@ namespace Monkeymoto.InlineCollections
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If the <see cref="GetEnumeratorMethod"/> option is included, then this interface is implemented implicitly
-        /// through that method; otherwise, all interface members are implemented explicitly.
+        /// If the <see cref="GetEnumeratorMethod"/> option is included and the <see cref="RefStructEnumerator"/> option is
+        /// not included, then this interface is implemented implicitly through that method; otherwise, all interface
+        /// members are implemented explicitly.
+        /// </para><para>
+        /// If the <see cref="RefStructEnumerator"/> option is included,
+        /// <see cref="IEnumerable{T}.GetEnumerator()">GetEnumerator</see>() will throw a
+        /// <see cref="NotSupportedException">NotSupportedException</see> at runtime.
         /// </para><para>
         /// This option includes <see cref="IEnumerable"/>.
         /// </para>
         /// </remarks>
         /// <seealso cref="GetEnumeratorMethod"/>
         /// <seealso cref="IEnumerable"/>
+        /// <seealso cref="RefStructEnumerator"/>
         /// <seealso cref="System.Collections.IEnumerable"/>
         /// <seealso cref="IEnumerable{T}"/>
         IEnumerableT = (1 << 11) | IEnumerable,
@@ -306,16 +323,34 @@ namespace Monkeymoto.InlineCollections
         /// <seealso cref="ReadOnlySpan{T}"/>
         ReadOnlySpanConstructor = 1 << 20,
         /// <summary>
+        /// Generates a public <c>Enumerator</c> <see langword="ref struct"/> for the collection.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This option includes <see cref="GetEnumeratorMethod"/>, but does not include <see cref="IEnumerable"/> or
+        /// <see cref="IEnumerableT"/>.
+        /// </para><para>
+        /// If the <see cref="IEnumerable"/> or <see cref="IEnumerableT"/> options are included, their respective
+        /// <c>GetEnumerator</c>() implementations will throw a
+        /// <see cref="NotSupportedException">NotSupportedException</see> at runtime.
+        /// </para>
+        /// </remarks>
+        /// <seealso cref="GetEnumeratorMethod"/>
+        /// <seealso cref="IEnumerable"/>
+        /// <seealso cref="IEnumerableT"/>
+        /// <seealso cref="Span{T}.GetEnumerator()"/>
+        RefStructEnumerator = 1 << 21,
+        /// <summary>
         /// Generates a <c>public readonly T[] ToArray()</c> method for the collection.
         /// </summary>
         /// <seealso cref="ArrayConversionOperators"/>
-        ToArrayMethod = 1 << 21,
+        ToArrayMethod = 1 << 22,
         /// <summary>
         /// Generates a <c>public readonly bool TryCopyTo(<see cref="Span{T}">Span&lt;T&gt;</see>)</c> method for the
         /// collection.
         /// </summary>
         /// <seealso cref="CopyToMethod"/>
-        TryCopyToMethod = 1 << 22,
+        TryCopyToMethod = 1 << 23,
         /// <summary>
         /// Generates a collection with all options enabled.
         /// </summary>

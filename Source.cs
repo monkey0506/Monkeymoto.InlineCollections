@@ -157,7 +157,9 @@ namespace Monkeymoto.InlineCollections
 
         private static string GetGetEnumeratorMethodSource(in InlineCollectionTypeInfo typeInfo, string length) => GetSourceByFlag
         (
-            Template_GetEnumeratorMethod,
+            typeInfo.Flags.HasFlag(InlineCollectionFlags.RefStructEnumerator) ?
+                Template_GetEnumeratorMethod_ImplRefStructEnumerator :
+                Template_GetEnumeratorMethod_ImplExplicit,
             InlineCollectionFlags.GetEnumeratorMethod,
             typeInfo.Flags,
             typeInfo.ElementType,              // 0
@@ -195,20 +197,20 @@ namespace Monkeymoto.InlineCollections
         private static string GetIEnumerableSource(in InlineCollectionTypeInfo typeInfo, string length) =>
             typeInfo.Flags.HasFlag(InlineCollectionFlags.IEnumerable) ?
                 typeInfo.Flags.HasFlag(InlineCollectionFlags.GetEnumeratorMethod) ?
-                    Template_IEnumerable_ImplMethod :
+                    typeInfo.Flags.HasFlag(InlineCollectionFlags.RefStructEnumerator) ?
+                        Template_IEnumerable_ImplRefStructEnumerator :
+                        Template_IEnumerable_ImplMethod :
                     typeInfo.Flags.HasFlag(InlineCollectionFlags.IEnumerableT) ?
                         string.Format(Template_IEnumerable_ImplIEnumerableT, typeInfo.ElementType) :
                         string.Format(Template_IEnumerable_ImplExplicit, GetGetEnumeratorBodySource(length)) :
                 string.Empty;
 
-        private static string GetIEnumerableTSource(in InlineCollectionTypeInfo typeInfo, string length) => GetSourceIf
-        (
-            typeInfo.Flags.HasFlag(InlineCollectionFlags.IEnumerableT) &&
-                !typeInfo.Flags.HasFlag(InlineCollectionFlags.GetEnumeratorMethod),
-            Template_IEnumerableT_ImplExplicit,
-            typeInfo.ElementType,              // 0
-            GetGetEnumeratorBodySource(length) // 1
-        );
+        private static string GetIEnumerableTSource(in InlineCollectionTypeInfo typeInfo, string length) =>
+            typeInfo.Flags.HasFlag(InlineCollectionFlags.GetEnumeratorMethod) ?
+                typeInfo.Flags.HasFlag(InlineCollectionFlags.RefStructEnumerator) ?
+                    string.Format(Template_IEnumerableT_ImplRefStructEnumerator, typeInfo.ElementType) :
+                    string.Empty :
+                string.Format(Template_IEnumerableT_ImplExplicit, typeInfo.ElementType, GetGetEnumeratorBodySource(length));
 
         private static string GetIInlineCollectionSource(in InlineCollectionTypeInfo typeInfo, string length) => GetSourceIf
         (
@@ -259,6 +261,8 @@ namespace Monkeymoto.InlineCollections
 
         private static string GetInlineCollectionBody(in InlineCollectionTypeInfo typeInfo) => new StringBuilder()
             .AppendMember(GetLengthPropertySource(in typeInfo))
+            .AppendSeparator()
+            .AppendMember(GetRefStructEnumeratorSource(in typeInfo))
             .AppendSeparator()
             .AppendMember(GetArrayConversionOperatorsSource(in typeInfo))
             .AppendSeparator()
@@ -396,6 +400,15 @@ namespace Monkeymoto.InlineCollections
             typeInfo.Name,        // 0
             typeInfo.ElementType, // 1
             typeInfo.FullName     // 2
+        );
+
+        private static string GetRefStructEnumeratorSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
+        (
+            Template_RefStructEnumerator,
+            InlineCollectionFlags.RefStructEnumerator,
+            typeInfo.Flags,
+            typeInfo.FullName.Replace('<', '{').Replace('>', '}'),
+            typeInfo.ElementType
         );
 
         private static string GetSourceByFlag(string template, InlineCollectionFlags flagToCheck, InlineCollectionFlags flags, params string[] formatArgs)

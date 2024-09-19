@@ -162,6 +162,10 @@ namespace Monkeymoto.InlineCollections
             {
                 flags |= InlineCollectionFlags.IEnumerable;
             }
+            if (flags.HasFlag(InlineCollectionFlags.RefStructEnumerator))
+            {
+                flags |= InlineCollectionFlags.GetEnumeratorMethod;
+            }
             return flags;
         }
 

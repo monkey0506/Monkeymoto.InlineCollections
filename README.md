@@ -127,6 +127,18 @@ collection expressions by generating a collection builder class for your type.
 Analyzers will check collection expressions for your type to help detect if
 the collection expression is too large for your type.
 
+The `InlineCollectionFlags.RefStructEnumerator` feature will add a
+`public ref struct Enumerator` nested type inside your type. When included,
+this type will be the return type of the `GetEnumerator()` method (the
+`InlineCollectionFlags.GetEnumeratorMethod` feature is implied), and the
+[IEnumerable](https://learn.microsoft.com/en-us/dotnet/api/system.collections.ienumerable)
+and
+[IEnumerable&lt;T&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1)
+interfaces' respective `GetEnumerator()` methods (if your type includes those
+features) will throw a
+[NotSupportedException](https://learn.microsoft.com/en-us/dotnet/api/system.notsupportedexception)
+at runtime.
+
 The special feature `InlineCollectionFlags.Everything` will include all
 available features for your collection type.
 
@@ -146,6 +158,54 @@ possible. These unsupported interface members will produce a
 if they are accessed. If selecting to use these interface features, you should
 document that these interface members are unsupported. (*This is why all
 features are explicitly opt-in.*)
+
+#### Avoiding boxing
+
+If you want to include one or more interface features while still avoiding
+expensive boxing conversions, the following technique may be sufficient for
+your needs:
+
+````C#
+// without `struct` generic constraint: no boxing!
+public int GetListCount<T>(T list) where T : IList<T> => list.Count;
+
+// with `struct` generic constraint: no boxing!
+public int GetListCountStruct(T list) where T : struct, IList<T> => list.Count;
+````
+
+In both of these use cases, `list` is **not** boxed, even when accessing the
+`Count` interface property. If you pass your collection *directly* as a method
+argument of an interface type, or store a reference of interface type to your
+collection value, then boxing **will** occur:
+
+````C#
+// with interface-typed parameter: boxing!
+public int GetBoxedCount<T>(IList<T> list) => list.Count;
+
+// interface-typed reference: boxing!
+MyCollection collection = [1, 2, 3, 4]; // inline collection (value type)
+IList<int> list = collection; // interface conversion = boxing
+````
+
+#### Avoiding boxing: Enumerators
+
+The
+[IEnumerable](https://learn.microsoft.com/en-us/dotnet/api/system.collections.ienumerable)
+and
+[IEnumerable&lt;T&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1)
+interfaces will **always** result in a boxing conversion if used by your
+collection. Because these interfaces are implicitly included by many of the
+other interface features, it is unavoidable to include those features without
+also including these interfaces.
+
+Boxing conversions during enumeration may still be avoided by including the
+`InlineCollectionFlags.RefStructEnumerator` feature. This type will allow your
+collection to implement an explicit `GetEnumerator()` method that does not
+require boxing.
+
+*Note: Inline arrays already support loop-based enumeration out-of-the-box.
+This feature is designed for scenarios where you may want explicit control over
+the enumerator.*
 
 ## Motivation
 

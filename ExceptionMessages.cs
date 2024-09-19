@@ -12,6 +12,8 @@
         public const string ArgumentOutOfRangeException_SourceTooLargeForDestination =
             "Source was larger than the destination.";
         public const string NotSupportedException_FixedSizeCollection = "Inline collection was of a fixed size.";
+        public const string NotSupportedException_RefStructEnumeratorConversion =
+            "Collection with `ref struct` enumerator does not support conversion to the target enumerator interface.";
         public const string NotSupportedException_SynchronizedAccessNotSupported =
             "Inline collection does not support synchronized access.";
     }
