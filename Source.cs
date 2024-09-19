@@ -411,7 +411,13 @@ namespace Monkeymoto.InlineCollections
             typeInfo.ElementType
         );
 
-        private static string GetSourceByFlag(string template, InlineCollectionFlags flagToCheck, InlineCollectionFlags flags, params string[] formatArgs)
+        private static string GetSourceByFlag
+        (
+            string template,
+            InlineCollectionFlags flagToCheck,
+            InlineCollectionFlags flags,
+            params string[] formatArgs
+        )
         {
             bool hasFlag = flags.HasFlag(flagToCheck);
             return GetSourceIf(hasFlag, template, formatArgs);
