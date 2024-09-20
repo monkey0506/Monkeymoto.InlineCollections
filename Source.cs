@@ -206,11 +206,13 @@ namespace Monkeymoto.InlineCollections
                 string.Empty;
 
         private static string GetIEnumerableTSource(in InlineCollectionTypeInfo typeInfo, string length) =>
-            typeInfo.Flags.HasFlag(InlineCollectionOptions.GetEnumeratorMethod) ?
-                typeInfo.Flags.HasFlag(InlineCollectionOptions.RefStructEnumerator) ?
-                    string.Format(Template_IEnumerableT_ImplRefStructEnumerator, typeInfo.ElementType) :
-                    string.Empty :
-                string.Format(Template_IEnumerableT_ImplExplicit, typeInfo.ElementType, GetGetEnumeratorBodySource(length));
+            typeInfo.Flags.HasFlag(InlineCollectionOptions.IEnumerableT) ?
+                typeInfo.Flags.HasFlag(InlineCollectionOptions.GetEnumeratorMethod) ?
+                    typeInfo.Flags.HasFlag(InlineCollectionOptions.RefStructEnumerator) ?
+                        string.Format(Template_IEnumerableT_ImplRefStructEnumerator, typeInfo.ElementType) :
+                        string.Empty :
+                    string.Format(Template_IEnumerableT_ImplExplicit, typeInfo.ElementType, GetGetEnumeratorBodySource(length)) :
+                string.Empty;
 
         private static string GetIInlineCollectionSource(in InlineCollectionTypeInfo typeInfo, string length) => GetSourceIf
         (
