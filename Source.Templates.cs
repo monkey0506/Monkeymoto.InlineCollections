@@ -407,7 +407,7 @@ namespace Monkeymoto.InlineCollections
         private const string Template_ICollectionT =
 @"
         readonly int ICollection<{0}>.Count => {1};
-        readonly bool ICollection<{0}>.IsReadOnly => false;
+        readonly bool ICollection<{0}>.IsReadOnly => true;
         void ICollection<{0}>.Add({0} item) => throw new NotSupportedException({2});
         void ICollection<{0}>.Clear() => throw new NotSupportedException({2});{3}
         readonly void ICollection<{0}>.CopyTo({0}[] array, int arrayIndex) =>
