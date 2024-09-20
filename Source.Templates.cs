@@ -37,13 +37,11 @@
         /// Creates a new read-only span over the collection.
         /// </summary>
         /// <returns>The new read-only span over the elements of the collection.</returns>
-        [UnscopedRef]
         readonly {{0}}ReadOnlySpan<{{1}}> {{2}}AsReadOnlySpan() => {0};
         /// <summary>
         /// Creates a new span over the collection.
         /// </summary>
         /// <returns>The new span over the elements of the collection.</returns>
-        [UnscopedRef]
         {{0}}Span<{{1}}> {{2}}AsSpan() => {1};";
 
         private static readonly string Template_AsSpanReadOnlySpanMethods = string.Format
@@ -349,9 +347,7 @@ namespace Monkeymoto.InlineCollections
     
     file interface IInlineCollection<TElement>
     {{
-        [UnscopedRef]
         public ReadOnlySpan<TElement> AsReadOnlySpan();
-        [UnscopedRef]
         public Span<TElement> AsSpan();
     }}
 }}";
