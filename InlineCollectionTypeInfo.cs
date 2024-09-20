@@ -17,7 +17,6 @@ namespace Monkeymoto.InlineCollections
         public readonly ImmutableArray<Diagnostic> Diagnostics = default;
         public readonly string ElementType = default!;
         public readonly string ElementZeroFieldName = default!;
-        public readonly InlineCollectionOptions Flags = default;
         public readonly string FullName = default!;
         public readonly string FullNameWithContainingTypeNames = default!;
         public readonly int Length = default;
@@ -25,6 +24,7 @@ namespace Monkeymoto.InlineCollections
         public readonly string Modifiers = default!;
         public readonly string Name = default!;
         public readonly string Namespace = default!;
+        public readonly InlineCollectionOptions Options = default;
         public readonly ImmutableArray<TypeListNode> TypeList = default!;
         public readonly INamedTypeSymbol TypeSymbol = default!;
 
@@ -128,45 +128,45 @@ namespace Monkeymoto.InlineCollections
             return [.. diagnostics];
         }
 
-        private static InlineCollectionOptions GetFlags(InlineCollectionOptions flags)
+        private static InlineCollectionOptions GetOptions(InlineCollectionOptions options)
         {
-            // combined flags are set in the definition (e.g., ICollection has the IEnumerable flag)
+            // combined options are set in the definition (e.g., ICollection has the IEnumerable option)
             // this is a redundancy against user-input patterns like (ICollection ^ IEnumerable)
-            if (flags.HasFlag(InlineCollectionOptions.IReadOnlyListT))
+            if (options.HasFlag(InlineCollectionOptions.IReadOnlyListT))
             {
-                flags |= InlineCollectionOptions.IEnumerable | InlineCollectionOptions.IEnumerableT |
+                options |= InlineCollectionOptions.IEnumerable | InlineCollectionOptions.IEnumerableT |
                     InlineCollectionOptions.IReadOnlyCollectionT;
             }
-            else if (flags.HasFlag(InlineCollectionOptions.IReadOnlyCollectionT))
+            else if (options.HasFlag(InlineCollectionOptions.IReadOnlyCollectionT))
             {
-                flags |= InlineCollectionOptions.IEnumerable | InlineCollectionOptions.IEnumerableT;
+                options |= InlineCollectionOptions.IEnumerable | InlineCollectionOptions.IEnumerableT;
             }
-            if (flags.HasFlag(InlineCollectionOptions.IListT))
+            if (options.HasFlag(InlineCollectionOptions.IListT))
             {
-                flags |= InlineCollectionOptions.ICollectionT | InlineCollectionOptions.IEnumerable |
+                options |= InlineCollectionOptions.ICollectionT | InlineCollectionOptions.IEnumerable |
                     InlineCollectionOptions.IEnumerableT;
             }
-            else if (flags.HasFlag(InlineCollectionOptions.ICollectionT))
+            else if (options.HasFlag(InlineCollectionOptions.ICollectionT))
             {
-                flags |= InlineCollectionOptions.IEnumerable | InlineCollectionOptions.IEnumerableT;
+                options |= InlineCollectionOptions.IEnumerable | InlineCollectionOptions.IEnumerableT;
             }
-            if (flags.HasFlag(InlineCollectionOptions.IList))
+            if (options.HasFlag(InlineCollectionOptions.IList))
             {
-                flags |= InlineCollectionOptions.ICollection | InlineCollectionOptions.IEnumerable;
+                options |= InlineCollectionOptions.ICollection | InlineCollectionOptions.IEnumerable;
             }
-            else if (flags.HasFlag(InlineCollectionOptions.ICollection))
+            else if (options.HasFlag(InlineCollectionOptions.ICollection))
             {
-                flags |= InlineCollectionOptions.IEnumerable;
+                options |= InlineCollectionOptions.IEnumerable;
             }
-            if (flags.HasFlag(InlineCollectionOptions.IEnumerableT))
+            if (options.HasFlag(InlineCollectionOptions.IEnumerableT))
             {
-                flags |= InlineCollectionOptions.IEnumerable;
+                options |= InlineCollectionOptions.IEnumerable;
             }
-            if (flags.HasFlag(InlineCollectionOptions.RefStructEnumerator))
+            if (options.HasFlag(InlineCollectionOptions.RefStructEnumerator))
             {
-                flags |= InlineCollectionOptions.GetEnumeratorMethod;
+                options |= InlineCollectionOptions.GetEnumeratorMethod;
             }
-            return flags;
+            return options;
         }
 
         private static string GetFullNameWithContainingTypeNames(in ImmutableArray<TypeListNode> typeList)
@@ -225,7 +225,7 @@ namespace Monkeymoto.InlineCollections
             if (inlineCollectionAttributeData.ConstructorArguments.Any())
             {
                 var value = (IConvertible?)inlineCollectionAttributeData.ConstructorArguments[0].Value;
-                args.Flags = GetFlags
+                args.Options = GetOptions
                 (
                     (InlineCollectionOptions)(value?.ToInt32(null) ?? (int)InlineCollectionOptions.CollectionBuilder)
                 );
@@ -238,7 +238,7 @@ namespace Monkeymoto.InlineCollections
 
         private InlineCollectionTypeInfo(in ConstructorArgs args)
         {
-            var hasCollectionBuilder = args.Flags.HasFlag(InlineCollectionOptions.CollectionBuilder);
+            var hasCollectionBuilder = args.Options.HasFlag(InlineCollectionOptions.CollectionBuilder);
             var type = args.TypeList.Last();
             Diagnostics = GetDiagnostics(in args, hasCollectionBuilder, in type);
             if (Diagnostics.Any())
@@ -251,11 +251,11 @@ namespace Monkeymoto.InlineCollections
                 string.Empty;
             ElementType = args.FieldSymbol!.Type.ToDisplayString();
             ElementZeroFieldName = args.FieldSymbol.Name;
-            Flags = args.Flags;
+            Options = args.Options;
             FullName = type.FullName;
             FullNameWithContainingTypeNames = GetFullNameWithContainingTypeNames(in args.TypeList);
             Length = args.Length;
-            LengthPropertyOrValue = Flags.HasFlag(InlineCollectionOptions.LengthProperty) ? "Length" : Length.ToString();
+            LengthPropertyOrValue = Options.HasFlag(InlineCollectionOptions.LengthProperty) ? "Length" : Length.ToString();
             Modifiers = type.Modifiers;
             Name = args.TypeSymbol.Name;
             Namespace = args.TypeSymbol.ContainingNamespace.ToDisplayString();
