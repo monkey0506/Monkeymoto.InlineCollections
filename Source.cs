@@ -341,9 +341,10 @@ namespace Monkeymoto.InlineCollections
             bool isIStructuralEquatable = typeInfo.HasOptions(InlineCollectionOptions.IStructuralEquatable);
             bool explicitICollection = !isIList && isICollection;
             bool explicitICollectionT = !isIListT && isICollectionT;
-            bool explicitIEnumerableT = !isICollectionT && !isIListT && !isIReadOnlyCollectionT && !isIReadOnlyListT &&
-                isIEnumerableT;
-            bool explicitIEnumerable = !isICollection && !isIList && !explicitIEnumerableT && isIEnumerable;
+            bool hasGenericCollection = isICollectionT || isIListT || isIReadOnlyCollectionT || isIReadOnlyListT;
+            bool explicitIEnumerableT = !hasGenericCollection && isIEnumerableT;
+            bool explicitIEnumerable = !hasGenericCollection && !isICollection && !isIList && !explicitIEnumerableT &&
+                isIEnumerable;
             bool explicitIReadOnlyCollectionT = !isIReadOnlyListT && isIReadOnlyCollectionT;
             return new StringBuilder()
                 .AppendInterfaceIf(explicitICollection, "ICollection")
