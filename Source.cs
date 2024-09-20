@@ -438,9 +438,7 @@ namespace Monkeymoto.InlineCollections
                 GetInterfaceList(in typeInfo),                    // 4
                 GetInlineCollectionBody(in typeInfo)              // 5
             )
-        ).Replace("\r\n", "\n")
-            .Replace("\n\r", "\n")
-            .Replace("\n", $"{Template_NewLine}{new string(' ', 4 * (typeInfo.TypeList.Length - 1))}")
+        ).Replace(Template_NewLine, $"{Template_NewLine}{new string(' ', 4 * (typeInfo.TypeList.Length - 1))}")
             .ToString();
 
         private static string GetToArrayMethodSource(in InlineCollectionTypeInfo typeInfo) => GetSourceByFlag
