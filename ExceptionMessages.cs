@@ -6,7 +6,8 @@
             "Argument type did not match the type of the inline collection.";
         public const string ArgumentException_InvalidDestinationArray =
             "Destination array must be one-dimensional array of the same element type as the inline collection.";
-        public const string ArgumentOutOfRangeException_IndexOutOfArrayRange = "Index out of range of the array bounds.";
+        public const string ArgumentOutOfRangeException_IndexOutOfArrayRange =
+            "Index out of range of the array bounds.";
         public const string ArgumentOutOfRangeException_IndexOutOfCollectionRange =
             "Index out of range of the inline collection bounds.";
         public const string ArgumentOutOfRangeException_SourceTooLargeForDestination =

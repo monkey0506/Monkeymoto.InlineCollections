@@ -78,7 +78,8 @@ namespace Monkeymoto.InlineCollections
                 }
                 if (collectionExpression.Elements.Length > collectionLength)
                 {
-                    int knownExpressionLength = collectionExpression.Elements.Where(x => x is not ISpreadOperation).Count();
+                    int knownExpressionLength = collectionExpression.Elements.Where(x => x is not ISpreadOperation)
+                        .Count();
                     diagnostics.AddDiagnostic
                     (
                         knownExpressionLength > collectionLength ?
@@ -96,7 +97,11 @@ namespace Monkeymoto.InlineCollections
         {
             context.RegisterPostInitializationOutput(static context =>
             {
-                context.AddSource(Source.InlineCollectionAttribute_FileName, Source.GetInlineCollectionAttributeSource());
+                context.AddSource
+                (
+                    Source.InlineCollectionAttribute_FileName,
+                    Source.GetInlineCollectionAttributeSource()
+                );
                 context.AddSource(Source.InlineCollectionOptions_FileName, Source.GetInlineCollectionOptionsSource());
             });
             var inlineCollectionTypes = context.SyntaxProvider.ForAttributeWithMetadataName
@@ -110,7 +115,8 @@ namespace Monkeymoto.InlineCollections
                 static (node, _) => node is CollectionExpressionSyntax,
                 GetCollectionExpressionOperation
             ).Where(static x => x is not null).Collect();
-            var generatedSourceInfo = inlineCollectionTypes.Combine(collectionExpressions).Select(GetGeneratedSourceInfo);
+            var generatedSourceInfo = inlineCollectionTypes.Combine(collectionExpressions)
+                .Select(GetGeneratedSourceInfo);
             context.RegisterImplementationSourceOutput
             (
                 generatedSourceInfo,

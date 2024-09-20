@@ -90,12 +90,14 @@
         private const string Template_CopyToMethod =
 @"
         /// <summary>
-        /// Copies the contents of this collection into a destination <see cref=""System.Span{{T}}"">Span&lt;{0}&gt;</see>.
+        /// Copies the contents of this collection into a destination
+        /// <see cref=""System.Span{{T}}"">Span&lt;{0}&gt;</see>.
         /// </summary>
         /// <exception cref=""ArgumentOutOfRangeException"">
         /// The collection was larger than the size of the specified destination span.
         /// </exception>
-        public readonly void CopyTo(Span<{0}> destination) => Implementation.CopyTo(this, destination, nameof(destination));";
+        public readonly void CopyTo(Span<{0}> destination) =>
+            Implementation.CopyTo(this, destination, nameof(destination));";
 
         private const string Template_CreateReadOnlySpan = "MemoryMarshal.CreateReadOnlySpan(in {3}, {4})";
 
@@ -627,8 +629,9 @@ namespace Monkeymoto.InlineCollections
         private const string Template_TryCopyToMethod =
 @"
         /// <summary>
-        /// Attempts to copy the contents of this collection into a <see cref=""System.Span{{T}}"">Span&lt;{0}&gt;</see> and
-        /// returns a value to indicate whether or not the operation succeeded.
+        /// Attempts to copy the contents of this collection into a
+        /// <see cref=""System.Span{{T}}"">Span&lt;{0}&gt;</see> and returns a value to indicate whether or not the
+        /// operation succeeded.
         /// </summary>
         /// <returns>
         /// <see langword=""true"" /> if the copy operation succeeded; otherwise, <see langword=""false"" />.

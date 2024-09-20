@@ -28,8 +28,10 @@ namespace Monkeymoto.InlineCollections
         public readonly ImmutableArray<TypeListNode> TypeList = default!;
         public readonly INamedTypeSymbol TypeSymbol = default!;
 
-        public static bool operator ==(InlineCollectionTypeInfo left, InlineCollectionTypeInfo right) => left.Equals(right);
-        public static bool operator !=(InlineCollectionTypeInfo left, InlineCollectionTypeInfo right) => !(left == right);
+        public static bool operator ==(InlineCollectionTypeInfo left, InlineCollectionTypeInfo right) =>
+            left.Equals(right);
+        public static bool operator !=(InlineCollectionTypeInfo left, InlineCollectionTypeInfo right) =>
+            !(left == right);
 
         private static string GetCollectionBuilderName(in ImmutableArray<TypeListNode> typeList)
         {
@@ -78,7 +80,12 @@ namespace Monkeymoto.InlineCollections
             return sb.ToString();
         }
 
-        private static ImmutableArray<Diagnostic> GetDiagnostics(in ConstructorArgs args, bool hasCollectionBuilder, in TypeListNode type)
+        private static ImmutableArray<Diagnostic> GetDiagnostics
+        (
+            in ConstructorArgs args,
+            bool hasCollectionBuilder,
+            in TypeListNode type
+        )
         {
             var diagnostics = new List<Diagnostic>();
             if (hasCollectionBuilder && args.TypeList.Any(static x => !x.IsPublicOrInternal))
@@ -128,6 +135,20 @@ namespace Monkeymoto.InlineCollections
             return [.. diagnostics];
         }
 
+        private static string GetFullNameWithContainingTypeNames(in ImmutableArray<TypeListNode> typeList)
+        {
+            var sb = new StringBuilder();
+            foreach (var node in typeList)
+            {
+                if (sb.Length != 0)
+                {
+                    _ = sb.Append('.');
+                }
+                _ = sb.Append(node.FullName);
+            }
+            return sb.ToString();
+        }
+
         private static InlineCollectionOptions GetOptions(InlineCollectionOptions options)
         {
             // combined options are set in the definition (e.g., ICollection has the IEnumerable option)
@@ -169,20 +190,6 @@ namespace Monkeymoto.InlineCollections
             return options;
         }
 
-        private static string GetFullNameWithContainingTypeNames(in ImmutableArray<TypeListNode> typeList)
-        {
-            var sb = new StringBuilder();
-            foreach (var node in typeList)
-            {
-                if (sb.Length != 0)
-                {
-                    _ = sb.Append('.');
-                }
-                _ = sb.Append(node.FullName);
-            }
-            return sb.ToString();
-        }
-
         private static ImmutableArray<TypeListNode> GetTypeList
         (
             INamedTypeSymbol targetTypeSymbol,
@@ -220,8 +227,8 @@ namespace Monkeymoto.InlineCollections
             var inlineCollectionAttributeData = attributes
                 .Where(x => SymbolEqualityComparer.Default.Equals(x.AttributeClass, inlineCollectionAttributeSymbol))
                 .SingleOrDefault();
-            args.FieldSymbol = args.TypeSymbol.GetMembers().Where(static x => x.Kind == SymbolKind.Field).SingleOrDefault()
-                as IFieldSymbol;
+            args.FieldSymbol = args.TypeSymbol.GetMembers().Where(static x => x.Kind == SymbolKind.Field)
+                .SingleOrDefault() as IFieldSymbol;
             if (inlineCollectionAttributeData.ConstructorArguments.Any())
             {
                 var value = (IConvertible?)inlineCollectionAttributeData.ConstructorArguments[0].Value;
@@ -255,7 +262,7 @@ namespace Monkeymoto.InlineCollections
             FullName = type.FullName;
             FullNameWithContainingTypeNames = GetFullNameWithContainingTypeNames(in args.TypeList);
             Length = args.Length;
-            LengthPropertyOrValue = Options.HasFlag(InlineCollectionOptions.LengthProperty) ? "Length" : Length.ToString();
+            LengthPropertyOrValue = HasOptions(InlineCollectionOptions.LengthProperty) ? "Length" : Length.ToString();
             Modifiers = type.Modifiers;
             Name = args.TypeSymbol.Name;
             Namespace = args.TypeSymbol.ContainingNamespace.ToDisplayString();
@@ -266,6 +273,7 @@ namespace Monkeymoto.InlineCollections
         public override bool Equals(object obj) => obj is InlineCollectionTypeInfo other && Equals(other);
         public bool Equals(InlineCollectionTypeInfo other) =>
             SymbolEqualityComparer.Default.Equals(TypeSymbol, other.TypeSymbol);
+        public bool HasOptions(InlineCollectionOptions options) => Options.HasFlag(options);
         public override int GetHashCode() => SymbolEqualityComparer.Default.GetHashCode(TypeSymbol);
     }
 }

@@ -23,10 +23,10 @@ namespace Monkeymoto.InlineCollections
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Borrowed from <see href="https://stackoverflow.com/a/1646913">Quick and Simple Hash Code Combinations - Stack
-        /// Overflow</see> answer by user <see href="https://stackoverflow.com/users/22656/jon-skeet">Jon Skeet</see>, licensed
-        /// under <see href="https://creativecommons.org/licenses/by-sa/2.5/">CC BY-SA 2.5</see>. Changes have been made to
-        /// match the fields of this class.
+        /// Borrowed from <see href="https://stackoverflow.com/a/1646913">Quick and Simple Hash Code Combinations -
+        /// Stack Overflow</see> answer by user <see href="https://stackoverflow.com/users/22656/jon-skeet">Jon
+        /// Skeet</see>, licensed under <see href="https://creativecommons.org/licenses/by-sa/2.5/">CC BY-SA 2.5</see>.
+        /// Changes have been made to match the fields of this class.
         /// </para>
         /// </remarks>
         /// <returns>The hash value generated for this <see cref="GeneratedSourceInfo"/>.</returns>

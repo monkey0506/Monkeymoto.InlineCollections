@@ -30,8 +30,8 @@ namespace Monkeymoto.InlineCollections
         /// <seealso cref="ToArrayMethod"/>
         ArrayConversionOperators = 1 << 0,
         /// <summary>
-        /// Generates <c>public readonly <see cref="ReadOnlySpan{T}">ReadOnlySpan&lt;T&gt;</see> AsReadOnlySpan()</c> and
-        /// <c>public <see cref="Span{T}">Span&lt;T&gt;</see> AsSpan()</c> methods for the collection.
+        /// Generates <c>public readonly <see cref="ReadOnlySpan{T}">ReadOnlySpan&lt;T&gt;</see> AsReadOnlySpan()</c>
+        /// and <c>public <see cref="Span{T}">Span&lt;T&gt;</see> AsSpan()</c> methods for the collection.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -88,8 +88,8 @@ namespace Monkeymoto.InlineCollections
         /// This option does not include <see cref="IEnumerable"/> or <see cref="IEnumerableT"/>.
         /// </para><para>
         /// If the <see cref="RefStructEnumerator"/> option is included, then the return type of the generated
-        /// <c>GetEnumerator</c>() method will be the generated <c>Enumerator</c> type; otherwise, the return type will be
-        /// <see cref="IEnumerator{T}">IEnumerator&lt;T&gt;</see>.
+        /// <c>GetEnumerator</c>() method will be the generated <c>Enumerator</c> type; otherwise, the return type will
+        /// be <see cref="IEnumerator{T}">IEnumerator&lt;T&gt;</see>.
         /// </para>
         /// </remarks>
         /// <seealso cref="IEnumerable"/>
@@ -101,8 +101,8 @@ namespace Monkeymoto.InlineCollections
         /// <seealso cref="Span{T}.GetEnumerator()"/>
         GetEnumeratorMethod = (1 << 7) | RefStructEnumerator,
         /// <summary>
-        /// Generates an implementation of the <see cref="System.Collections.ICollection">ICollection</see> interface for
-        /// the collection.
+        /// Generates an implementation of the <see cref="System.Collections.ICollection">ICollection</see> interface
+        /// for the collection.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -150,8 +150,8 @@ namespace Monkeymoto.InlineCollections
         /// <seealso cref="IEnumerable{T}"/>
         ICollectionT = (1 << 9) | IEnumerable | IEnumerableT | RefStructEnumerator,
         /// <summary>
-        /// Generates an implementation of the <see cref="System.Collections.IEnumerable">IEnumerable</see> interface for
-        /// the collection.
+        /// Generates an implementation of the <see cref="System.Collections.IEnumerable">IEnumerable</see> interface
+        /// for the collection.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -175,9 +175,9 @@ namespace Monkeymoto.InlineCollections
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If the <see cref="GetEnumeratorMethod"/> option is included and the <see cref="RefStructEnumerator"/> option is
-        /// not included, then this interface is implemented implicitly through that method; otherwise, all interface
-        /// members are implemented explicitly.
+        /// If the <see cref="GetEnumeratorMethod"/> option is included and the <see cref="RefStructEnumerator"/>
+        /// option is not included, then this interface is implemented implicitly through that method; otherwise, all
+        /// interface members are implemented explicitly.
         /// </para><para>
         /// If the <see cref="RefStructEnumerator"/> option is included,
         /// <see cref="IEnumerable{T}.GetEnumerator()">GetEnumerator</see>() will throw a
@@ -228,9 +228,9 @@ namespace Monkeymoto.InlineCollections
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If the <see cref="IndexOfMethod"/> option is included, then <see cref="IList{T}.IndexOf(T)"/> is implemented
-        /// implicitly through that method; otherwise, this method is implemented explicitly. All other interface members
-        /// are implemented explicitly.
+        /// If the <see cref="IndexOfMethod"/> option is included, then <see cref="IList{T}.IndexOf(T)"/> is
+        /// implemented implicitly through that method; otherwise, this method is implemented explicitly. All other
+        /// interface members are implemented explicitly.
         /// </para><para>
         /// The <see cref="IList{T}.Insert(int, T)">Insert(int, T)</see> and
         /// <see cref="IList{T}.RemoveAt(int)">RemoveAt(int)</see> methods always throw a
@@ -276,8 +276,8 @@ namespace Monkeymoto.InlineCollections
         /// <seealso cref="IReadOnlyCollection{T}"/>
         IReadOnlyCollectionT = (1 << 15) | IEnumerable | IEnumerableT | RefStructEnumerator,
         /// <summary>
-        /// Generates an implementation of the <see cref="IReadOnlyList{T}">IReadOnlyList&lt;T&gt;</see> interface for the
-        /// collection.
+        /// Generates an implementation of the <see cref="IReadOnlyList{T}">IReadOnlyList&lt;T&gt;</see> interface for
+        /// the collection.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -296,7 +296,8 @@ namespace Monkeymoto.InlineCollections
         IReadOnlyListT = (1 << 16) | IEnumerable | IEnumerableT | IReadOnlyCollectionT | RefStructEnumerator,
         /// <summary>
         /// Generates an implementation of the
-        /// <see cref="System.Collections.IStructuralComparable">IStructuralComparable</see> interface for the collection.
+        /// <see cref="System.Collections.IStructuralComparable">IStructuralComparable</see> interface for the
+        /// collection.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -307,7 +308,8 @@ namespace Monkeymoto.InlineCollections
         IStructuralComparable = 1 << 17,
         /// <summary>
         /// Generates an implementation of the
-        /// <see cref="System.Collections.IStructuralEquatable">IStructuralEquatable</see> interface for the collection.
+        /// <see cref="System.Collections.IStructuralEquatable">IStructuralEquatable</see> interface for the
+        /// collection.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -325,8 +327,8 @@ namespace Monkeymoto.InlineCollections
         LengthProperty = 1 << 19,
         /// <summary>
         /// Generates a public constructor for the collection which takes a
-        /// <see cref="ReadOnlySpan{T}">ReadOnlySpan&lt;T&gt;</see> argument from which the elements of the new instance
-        /// will be initialized.
+        /// <see cref="ReadOnlySpan{T}">ReadOnlySpan&lt;T&gt;</see> argument from which the elements of the new
+        /// instance will be initialized.
         /// </summary>
         /// <seealso cref="ReadOnlySpan{T}"/>
         ReadOnlySpanConstructor = 1 << 20,
