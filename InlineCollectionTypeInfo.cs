@@ -19,6 +19,7 @@ namespace Monkeymoto.InlineCollections
         public readonly string ElementZeroFieldName = default!;
         public readonly string FullName = default!;
         public readonly string FullNameWithContainingTypeNames = default!;
+        public readonly bool HasRefStructInterfaceFeature = default!;
         public readonly int Length = default;
         public readonly string LengthPropertyOrValue = default!;
         public readonly string Modifiers = default!;
@@ -149,7 +150,11 @@ namespace Monkeymoto.InlineCollections
             return sb.ToString();
         }
 
-        private static InlineCollectionOptions GetOptions(InlineCollectionOptions options)
+        private static InlineCollectionOptions GetOptions
+        (
+            InlineCollectionOptions options,
+            bool hasRefStructInterfaceFeature
+        )
         {
             // combined options are set in the definition (e.g., ICollection has the IEnumerable option)
             // this is a redundancy against user-input patterns like (ICollection ^ IEnumerable)
@@ -187,6 +192,23 @@ namespace Monkeymoto.InlineCollections
             {
                 options |= InlineCollectionOptions.GetEnumeratorMethod;
             }
+            if (!hasRefStructInterfaceFeature ||
+                (
+                    (options &
+                    (
+                        InlineCollectionOptions.ICollection |
+                        InlineCollectionOptions.ICollectionT |
+                        InlineCollectionOptions.IList |
+                        InlineCollectionOptions.IListT |
+                        InlineCollectionOptions.IReadOnlyCollectionT |
+                        InlineCollectionOptions.IReadOnlyListT |
+                        InlineCollectionOptions.IStructuralComparable |
+                        InlineCollectionOptions.IStructuralEquatable
+                    )) == 0
+                ))
+            {
+                options &= ~InlineCollectionOptions.CollectionProxyStruct;
+            }
             return options;
         }
 
@@ -212,12 +234,14 @@ namespace Monkeymoto.InlineCollections
         public static InlineCollectionTypeInfo GetTypeInfo
         (
             GeneratorAttributeSyntaxContext context,
-            CancellationToken cancellationToken
+            CancellationToken cancellationToken,
+            bool hasRefStructInterfaceFeature
         )
         {
             var typeDeclaration = (StructDeclarationSyntax)context.TargetNode;
             var args = new ConstructorArgs
             {
+                HasRefStructInterfaceFeature = hasRefStructInterfaceFeature,
                 Location = typeDeclaration.GetLocation(),
                 TypeSymbol = (INamedTypeSymbol)context.TargetSymbol.OriginalDefinition
             };
@@ -234,7 +258,8 @@ namespace Monkeymoto.InlineCollections
                 var value = (IConvertible?)inlineCollectionAttributeData.ConstructorArguments[0].Value;
                 args.Options = GetOptions
                 (
-                    (InlineCollectionOptions)(value?.ToInt32(null) ?? (int)InlineCollectionOptions.CollectionBuilder)
+                    (InlineCollectionOptions)(value?.ToInt32(null) ?? (int)InlineCollectionOptions.CollectionBuilder),
+                    hasRefStructInterfaceFeature
                 );
             }
             args.Length = (int?)inlineCollectionAttributeData.NamedArguments.Where(static x => x.Key == "Length")
@@ -261,6 +286,7 @@ namespace Monkeymoto.InlineCollections
             Options = args.Options;
             FullName = type.FullName;
             FullNameWithContainingTypeNames = GetFullNameWithContainingTypeNames(in args.TypeList);
+            HasRefStructInterfaceFeature = args.HasRefStructInterfaceFeature;
             Length = args.Length;
             LengthPropertyOrValue = HasOptions(InlineCollectionOptions.LengthProperty) ? "Length" : Length.ToString();
             Modifiers = type.Modifiers;

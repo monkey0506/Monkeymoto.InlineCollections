@@ -1,8 +1,10 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using static Monkeymoto.InlineCollections.ExceptionMessages;
 
 namespace Monkeymoto.InlineCollections
@@ -38,21 +40,6 @@ namespace Monkeymoto.InlineCollections
             bool condition,
             string interfaceToAppend
         ) => condition ? sb.AppendInterface(interfaceToAppend) : sb;
-
-        private static StringBuilder AppendMember(this StringBuilder sb, string memberToAppend) => sb
-            .AppendSeparatorIf(memberToAppend.Contains(" {"))
-            .AppendIf(memberToAppend != string.Empty, memberToAppend)
-            .AppendSeparator(ifLastCharIs: '}');
-
-        private static StringBuilder AppendSeparator(this StringBuilder sb, char ifLastCharIs = ';') => sb
-            .AppendSeparatorIf(true, ifLastCharIs);
-
-        private static StringBuilder AppendSeparatorIf
-        (
-            this StringBuilder sb,
-            bool condition,
-            char ifLastCharIs = ';'
-        ) => sb.AppendIf((ifLastCharIs == sb.LastOrDefault()) && condition, Template_NewLineIndent2);
 
         private static string FormatIf(bool condition, string template, params string[] formatArgs) =>
             condition ? string.Format(template, formatArgs) : string.Empty;
@@ -110,6 +97,47 @@ namespace Monkeymoto.InlineCollections
             typeInfo.ElementType                         // 3
         );
 
+        private static string GetCollectionProxyStructSource(in InlineCollectionTypeInfo typeInfo) => FormatIf
+        (
+            typeInfo.Options.HasFlag(InlineCollectionOptions.CollectionProxyStruct),
+            Template_CollectionProxyStruct,
+            typeInfo.FullName,                              // 0
+            GetInterfaceList(in typeInfo, true),            // 1
+            typeInfo.ElementType,                           // 2
+            GetCollectionProxyStructBodySource(in typeInfo) // 3
+        );
+
+        private static string GetCollectionProxyStructPropertySource(in InlineCollectionTypeInfo typeInfo) => FormatIf
+        (
+            typeInfo.Options.HasFlag(InlineCollectionOptions.CollectionProxyStruct),
+            Template_CollectionProxyStructProperty
+        );
+
+        private static string GetCollectionProxyStructBodySource(in InlineCollectionTypeInfo typeInfo) =>
+            new SourceProvider(in typeInfo)
+            .AppendMemberIfProxied(GetICollectionSource)
+            .AppendSeparator()
+            .AppendMemberIfProxied(GetICollectionTSource)
+            .AppendSeparator()
+            .AppendMemberIfProxied(GetIEnumerable_CollectionProxy_Source)
+            .AppendSeparator()
+            .AppendMemberIfProxied(GetIEnumerableT_CollectionProxy_Source)
+            .AppendSeparator()
+            .AppendMemberIfProxied(GetIListSource)
+            .AppendSeparator()
+            .AppendMemberIfProxied(GetIListTSource)
+            .AppendSeparator()
+            .AppendMemberIfProxied(GetIReadOnlyCollectionTSource)
+            .AppendSeparator()
+            .AppendMemberIfProxied(GetIReadOnlyListTSource)
+            .AppendSeparator()
+            .AppendMemberIfProxied(GetIStructuralComparableSource)
+            .AppendSeparator()
+            .AppendMemberIfProxied(GetIStructuralEquatableSource)
+            .ReplaceThisIfProxied()
+            .TrimEnd()
+            .ToString();
+
         private static string GetContainsMethodSource(in InlineCollectionTypeInfo typeInfo) => FormatIf
         (
             typeInfo.HasOptions(InlineCollectionOptions.ContainsMethod),
@@ -124,7 +152,7 @@ namespace Monkeymoto.InlineCollections
             typeInfo.ElementType // 0
         );
 
-        private static string GetDefaultConstructor(in InlineCollectionTypeInfo typeInfo) => string.Format
+        private static string GetDefaultConstructorSource(in InlineCollectionTypeInfo typeInfo) => string.Format
         (
             Template_DefaultConstructor,
             typeInfo.Name // 0
@@ -184,6 +212,7 @@ namespace Monkeymoto.InlineCollections
 
         private static string GetICollectionT_ContainsMethod_Source(in InlineCollectionTypeInfo typeInfo) => FormatIf
         (
+            typeInfo.HasOptions(InlineCollectionOptions.CollectionProxyStruct) ||
             !typeInfo.HasOptions(InlineCollectionOptions.ContainsMethod),
             Template_ICollectionT_Contains_ImplExplicit,
             typeInfo.ElementType // 0
@@ -214,6 +243,11 @@ namespace Monkeymoto.InlineCollections
                         ) :
                 string.Empty;
 
+        private static string GetIEnumerable_CollectionProxy_Source(in InlineCollectionTypeInfo typeInfo) =>
+            typeInfo.HasOptions(InlineCollectionOptions.IEnumerable) ?
+                Template_IEnumerable_ImplCollectionProxy :
+                string.Empty;
+
         private static string GetIEnumerableTSource(in InlineCollectionTypeInfo typeInfo) =>
             typeInfo.HasOptions(InlineCollectionOptions.IEnumerableT) ?
                 typeInfo.HasOptions(InlineCollectionOptions.GetEnumeratorMethod) ?
@@ -227,6 +261,13 @@ namespace Monkeymoto.InlineCollections
                         GetGetEnumeratorBodySource(typeInfo.LengthPropertyOrValue) // 1
                     ) :
                 string.Empty;
+
+        private static string GetIEnumerableT_CollectionProxy_Source(in InlineCollectionTypeInfo typeInfo) => FormatIf
+        (
+            typeInfo.HasOptions(InlineCollectionOptions.IEnumerableT),
+            Template_IEnumerableT_ImplCollectionProxy,
+            typeInfo.ElementType // 0
+        );
 
         private static string GetIInlineCollectionSource(in InlineCollectionTypeInfo typeInfo) => FormatIf
         (
@@ -249,6 +290,7 @@ namespace Monkeymoto.InlineCollections
 
         private static string GetIListT_IndexOfMethod_Source(in InlineCollectionTypeInfo typeInfo) => FormatIf
         (
+            typeInfo.HasOptions(InlineCollectionOptions.CollectionProxyStruct) ||
             !typeInfo.HasOptions(InlineCollectionOptions.IndexOfMethod),
             Template_IListT_IndexOf_ImplExplict,
             typeInfo.ElementType // 0
@@ -272,47 +314,110 @@ namespace Monkeymoto.InlineCollections
 
         public static string GetInlineCollectionAttributeSource() => Template_InlineCollectionAttribute;
 
-        private static string GetInlineCollectionBody(in InlineCollectionTypeInfo typeInfo) => new StringBuilder()
-            .AppendMember(GetLengthPropertySource(in typeInfo))
+        private sealed class SourceProvider(in InlineCollectionTypeInfo typeInfo)
+        {
+            private readonly StringBuilder Builder = new();
+            private readonly bool IsProxied = typeInfo.HasOptions(InlineCollectionOptions.CollectionProxyStruct);
+            private readonly InlineCollectionTypeInfo TypeInfo = typeInfo;
+
+            public delegate string GetMemberHandler(in InlineCollectionTypeInfo typeInfo);
+
+            private SourceProvider AppendIf(bool condition, string stringToAppend)
+            {
+                _ = Builder.AppendIf(condition, stringToAppend);
+                return this;
+            }
+
+            public SourceProvider AppendMember(GetMemberHandler handler) => AppendMember(handler(in TypeInfo));
+
+            private SourceProvider AppendMember(string memberToAppend) =>
+                AppendSeparatorIf(memberToAppend.Contains(" {"))
+                    .AppendIf(memberToAppend != string.Empty, memberToAppend)
+                    .AppendSeparator(ifLastCharIs: '}');
+
+            public SourceProvider AppendMemberIfNotProxied(GetMemberHandler handler) => !IsProxied ?
+                AppendMember(handler(in TypeInfo)) :
+                this;
+
+            public SourceProvider AppendMemberIfProxied(GetMemberHandler handler) => IsProxied ?
+                AppendMemberIfProxied(handler(in TypeInfo)) :
+                this;
+
+            public SourceProvider AppendMemberIfProxied(string memberToAppend) => IsProxied ?
+                AppendMember(memberToAppend.Replace(Template_NewLine, Template_NewLineIndent1)) :
+                this;
+
+            public SourceProvider AppendSeparator(char ifLastCharIs = ';') => AppendSeparatorIf(true, ifLastCharIs);
+
+            private SourceProvider AppendSeparatorIf(bool condition, char ifLastCharIs = ';')
+            {
+                _ = Builder.AppendIf((ifLastCharIs == Builder.LastOrDefault()) && condition,Template_NewLineIndent2);
+                return this;
+            }
+
+            public SourceProvider ReplaceThisIfProxied()
+            {
+                if (IsProxied)
+                {
+                    _ = Builder.Replace("(this", "(span").Replace(" Length", " span.Length");
+                }
+                return this;
+            }
+
+            public SourceProvider TrimEnd()
+            {
+                _ = Builder.TrimEnd();
+                return this;
+            }
+
+            public override string ToString() => Builder.ToString();
+        }
+
+        private static string GetInlineCollectionBody(in InlineCollectionTypeInfo typeInfo) =>new SourceProvider
+        (
+            in typeInfo
+        ).AppendMember(GetLengthPropertySource)
+            .AppendMember(GetCollectionProxyStructPropertySource)
+            .AppendMember(GetCollectionProxyStructSource)
             .AppendSeparator()
-            .AppendMember(GetRefStructEnumeratorSource(in typeInfo))
+            .AppendMember(GetRefStructEnumeratorSource)
             .AppendSeparator()
-            .AppendMember(GetArrayConversionOperatorsSource(in typeInfo))
+            .AppendMember(GetArrayConversionOperatorsSource)
             .AppendSeparator()
-            .AppendMember(GetDefaultConstructor(in typeInfo))
-            .AppendMember(GetReadOnlySpanConstructorSource(in typeInfo))
+            .AppendMember(GetDefaultConstructorSource)
+            .AppendMember(GetReadOnlySpanConstructorSource)
             .AppendSeparator()
-            .AppendMember(GetAsSpanReadOnlySpanMethodsSource(in typeInfo))
-            .AppendMember(GetClearMethodSource(in typeInfo))
-            .AppendMember(GetContainsMethodSource(in typeInfo))
-            .AppendMember(GetCopyToMethodSource(in typeInfo))
-            .AppendMember(GetFillMethodSource(in typeInfo))
-            .AppendMember(GetGetEnumeratorMethodSource(in typeInfo))
-            .AppendMember(GetIndexOfMethodSource(in typeInfo))
-            .AppendMember(GetToArrayMethodSource(in typeInfo))
-            .AppendMember(GetTryCopyToMethodSource(in typeInfo))
+            .AppendMember(GetAsSpanReadOnlySpanMethodsSource)
+            .AppendMember(GetClearMethodSource)
+            .AppendMember(GetContainsMethodSource)
+            .AppendMember(GetCopyToMethodSource)
+            .AppendMember(GetFillMethodSource)
+            .AppendMember(GetGetEnumeratorMethodSource)
+            .AppendMember(GetIndexOfMethodSource)
+            .AppendMember(GetToArrayMethodSource)
+            .AppendMember(GetTryCopyToMethodSource)
             .AppendSeparator()
-            .AppendMember(GetICollectionSource(in typeInfo))
+            .AppendMemberIfNotProxied(GetICollectionSource)
             .AppendSeparator()
-            .AppendMember(GetICollectionTSource(in typeInfo))
+            .AppendMemberIfNotProxied(GetICollectionTSource)
             .AppendSeparator()
-            .AppendMember(GetIEnumerableSource(in typeInfo))
+            .AppendMemberIfNotProxied(GetIEnumerableSource)
             .AppendSeparator()
-            .AppendMember(GetIEnumerableTSource(in typeInfo))
+            .AppendMemberIfNotProxied(GetIEnumerableTSource)
             .AppendSeparator()
-            .AppendMember(GetIInlineCollectionSource(in typeInfo))
+            .AppendMember(GetIInlineCollectionSource)
             .AppendSeparator()
-            .AppendMember(GetIListSource(in typeInfo))
+            .AppendMemberIfNotProxied(GetIListSource)
             .AppendSeparator()
-            .AppendMember(GetIListTSource(in typeInfo))
+            .AppendMemberIfNotProxied(GetIListTSource)
             .AppendSeparator()
-            .AppendMember(GetIReadOnlyCollectionTSource(in typeInfo))
+            .AppendMemberIfNotProxied(GetIReadOnlyCollectionTSource)
             .AppendSeparator()
-            .AppendMember(GetIReadOnlyListTSource(in typeInfo))
+            .AppendMemberIfNotProxied(GetIReadOnlyListTSource)
             .AppendSeparator()
-            .AppendMember(GetIStructuralComparableSource(in typeInfo))
+            .AppendMemberIfNotProxied(GetIStructuralComparableSource)
             .AppendSeparator()
-            .AppendMember(GetIStructuralEquatableSource(in typeInfo))
+            .AppendMemberIfNotProxied(GetIStructuralEquatableSource)
             .TrimEnd()
             .ToString();
 
@@ -327,8 +432,12 @@ namespace Monkeymoto.InlineCollections
             return sb.Append(streamReader.ReadToEnd()).ToString();
         }
 
-        private static string GetInterfaceList(in InlineCollectionTypeInfo typeInfo)
+        private static string GetInterfaceList(in InlineCollectionTypeInfo typeInfo, bool isProxy)
         {
+            if (!isProxy && typeInfo.HasOptions(InlineCollectionOptions.CollectionProxyStruct))
+            {
+                return $" : IInlineCollection<{typeInfo.ElementType}>";
+            }
             bool isICollection = typeInfo.HasOptions(InlineCollectionOptions.ICollection);
             bool isICollectionT = typeInfo.HasOptions(InlineCollectionOptions.ICollectionT);
             bool isIEnumerable = typeInfo.HasOptions(InlineCollectionOptions.IEnumerable);
@@ -346,19 +455,23 @@ namespace Monkeymoto.InlineCollections
             bool explicitIEnumerable = !hasGenericCollection && !isICollection && !isIList && !explicitIEnumerableT &&
                 isIEnumerable;
             bool explicitIReadOnlyCollectionT = !isIReadOnlyListT && isIReadOnlyCollectionT;
-            return new StringBuilder()
+            var sb = new StringBuilder()
                 .AppendInterfaceIf(explicitICollection, "ICollection")
                 .AppendInterfaceIf(explicitICollectionT, $"ICollection<{typeInfo.ElementType}>")
                 .AppendInterfaceIf(explicitIEnumerable, "IEnumerable")
                 .AppendInterfaceIf(explicitIEnumerableT, $"IEnumerable<{typeInfo.ElementType}>")
-                .AppendInterface($"IInlineCollection<{typeInfo.ElementType}>")
+                .AppendInterfaceIf(!isProxy, $"IInlineCollection<{typeInfo.ElementType}>")
                 .AppendInterfaceIf(isIList, "IList")
                 .AppendInterfaceIf(isIListT, $"IList<{typeInfo.ElementType}>")
                 .AppendInterfaceIf(explicitIReadOnlyCollectionT, $"IReadOnlyCollection<{typeInfo.ElementType}>")
                 .AppendInterfaceIf(isIReadOnlyListT, $"IReadOnlyList<{typeInfo.ElementType}>")
                 .AppendInterfaceIf(isIStructuralComparable, "IStructuralComparable")
-                .AppendInterfaceIf(isIStructuralEquatable, "IStructuralEquatable")
-                .ToString();
+                .AppendInterfaceIf(isIStructuralEquatable, "IStructuralEquatable");
+            if (sb.Length != 0)
+            {
+                _ = sb.Insert(0, $" :{Template_NewLineIndent2}{(isProxy ? "    " : "")}");
+            }
+            return sb.ToString();
         }
 
         private static string GetIReadOnlyCollectionTSource(in InlineCollectionTypeInfo typeInfo) => FormatIf
@@ -428,7 +541,7 @@ namespace Monkeymoto.InlineCollections
                 GetCollectionBuilderAttributeSource(in typeInfo), // 1
                 typeInfo.Modifiers,                               // 2
                 typeInfo.FullName,                                // 3
-                GetInterfaceList(in typeInfo),                    // 4
+                GetInterfaceList(in typeInfo, isProxy: false),    // 4
                 GetInlineCollectionBody(in typeInfo)              // 5
             )
         ).Replace(Template_NewLine, $"{Template_NewLine}{new string(' ', 4 * (typeInfo.TypeList.Length - 1))}")

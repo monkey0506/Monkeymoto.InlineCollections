@@ -1,4 +1,6 @@
-﻿namespace Monkeymoto.InlineCollections
+﻿using static Monkeymoto.InlineCollections.ExceptionMessages;
+
+namespace Monkeymoto.InlineCollections
 {
     internal static partial class Source
     {
@@ -23,6 +25,18 @@
         );
         /////////////////////////////////////////////////
         /////////////////////////////////////////////////
+
+        private const string Template_AllowsRefStructTest =
+@"namespace Monkeymoto.InlineCollections
+{
+    internal static class AllowsRefStructTest
+    {
+        public static void Test<T>() where T : allows ref struct { }
+
+        public static void Main() { }
+    }
+}
+";
 
         private const string Template_ArrayConversionOperators =
 @"
@@ -75,6 +89,18 @@
         public static {1} Create{2}(ReadOnlySpan<{3}> span) =>
             Implementation.FromReadOnlySpan<{1}, {3}>(span);
     }}";
+
+        private const string Template_CollectionProxyStruct =
+@"
+        public ref struct CollectionProxy(ref {0} collection){1}
+        {{
+            private readonly Span<{2}> span = collection;{3}
+        }}";
+
+        private const string Template_CollectionProxyStructProperty =
+@"
+        [UnscopedRef]
+        public CollectionProxy Proxy => new(ref this);";
 
         private const string Template_ContainsMethod =
 @"
@@ -420,6 +446,16 @@ namespace Monkeymoto.InlineCollections
 @"
         readonly bool ICollection<{0}>.Contains({0} item) => Implementation.Contains(this, item);";
 
+        private const string Template_IEnumerable_CollectionProxyEnumeratorConversion =
+$@" =>
+            throw new NotSupportedException({nameof(NotSupportedException_CollectionProxyEnumeratorConversion)});";
+
+        private static readonly string Template_IEnumerable_ImplCollectionProxy = string.Format
+        (
+            Template_IEnumerable_Template,
+            Template_IEnumerable_CollectionProxyEnumeratorConversion
+        );
+
         private static readonly string Template_IEnumerable_ImplExplicit = string.Format
         (
             Template_IEnumerable_Template,
@@ -445,12 +481,18 @@ namespace Monkeymoto.InlineCollections
         );
 
         private const string Template_IEnumerable_RefStructEnumeratorConversion =
-@" =>
-            throw new NotSupportedException(NotSupportedException_RefStructEnumeratorConversion);";
+$@" =>
+            throw new NotSupportedException({nameof(NotSupportedException_RefStructEnumeratorConversion)});";
 
         private const string Template_IEnumerable_Template =
 @"
         IEnumerator IEnumerable.GetEnumerator(){0}";
+
+        private static readonly string Template_IEnumerableT_ImplCollectionProxy = string.Format
+        (
+            Template_IEnumerableT_Template,
+            Template_IEnumerable_CollectionProxyEnumeratorConversion
+        );
 
         private static readonly string Template_IEnumerableT_ImplExplicit = string.Format
         (
@@ -521,8 +563,7 @@ namespace {0}
         private const string Template_InlineCollection_StructDeclaration =
 @"
     [InlineArray({0})]{1}
-    {2} struct {3} :
-        {4}
+    {2} struct {3}{4}
     {{{5}
     }}";
 
@@ -566,14 +607,6 @@ namespace Monkeymoto.InlineCollections
         readonly int IStructuralEquatable.GetHashCode(IEqualityComparer comparer) =>
             Implementation.IStructuralEquatable_GetHashCode<{1}>(this, comparer);";
 
-        private const string Template_NewLine =
-@"
-";
-
-        private const string Template_NewLineIndent2 =
-@"
-        ";
-
         private const string Template_LengthProperty =
 @"
         /// <summary>
@@ -581,6 +614,14 @@ namespace Monkeymoto.InlineCollections
         /// </summary>
         /// <returns>The total number of elements in the collection.</returns>
         public readonly int Length => {0};";
+
+        private const string Template_NewLine =
+@"
+";
+
+        private static readonly string Template_NewLineIndent1 = $"{Template_NewLine}    ";
+
+        private static readonly string Template_NewLineIndent2 = $"{Template_NewLineIndent1}    ";
 
         private const string Template_ReadOnlySpanConstructor =
 @"

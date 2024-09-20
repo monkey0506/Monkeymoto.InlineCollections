@@ -9,6 +9,7 @@ namespace Monkeymoto.InlineCollections
         {
             public IFieldSymbol? FieldSymbol;
             public InlineCollectionOptions Options;
+            public bool HasRefStructInterfaceFeature;
             public int Length;
             public Location Location;
             public ImmutableArray<TypeListNode> TypeList;

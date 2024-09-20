@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 using System.Collections.Generic;
@@ -104,11 +105,19 @@ namespace Monkeymoto.InlineCollections
                 );
                 context.AddSource(Source.InlineCollectionOptions_FileName, Source.GetInlineCollectionOptionsSource());
             });
+            var hasRefStructInterfaceFeature = context.CompilationProvider.Select((compilation, cancellationToken) =>
+            {
+                var options = (CSharpParseOptions)compilation.SyntaxTrees.FirstOrDefault().Options;
+                return options.LanguageVersion > LanguageVersion.CSharp12;
+            });
             var inlineCollectionTypes = context.SyntaxProvider.ForAttributeWithMetadataName
             (
                 Source.InlineCollectionAttribute_Name,
                 static (_, _) => true,
-                InlineCollectionTypeInfo.GetTypeInfo
+                static (context, _) => context
+            ).Combine(hasRefStructInterfaceFeature).Select
+            (
+                static (x, cancellationToken) => InlineCollectionTypeInfo.GetTypeInfo(x.Left, cancellationToken, x.Right)
             ).Collect();
             var collectionExpressions = context.SyntaxProvider.CreateSyntaxProvider
             (
