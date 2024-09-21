@@ -657,6 +657,15 @@ namespace Monkeymoto.InlineCollections
             /// </summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext() => enumerator.MoveNext();
+
+            /// <summary>
+            /// Gets the element at the current position of the enumerator.
+            /// </summary>
+            public ref {1} Current
+            {{
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get => ref enumerator.Current;
+            }}
         }}";
 
         private const string Template_ToArrayMethod =
